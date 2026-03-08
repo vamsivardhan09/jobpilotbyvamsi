@@ -194,21 +194,59 @@ const JobDiscovery = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [progressText, setProgressText] = useState("");
 
+  // Load data + restore saved filter preferences
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [skillsRes, profileRes, matchesRes] = await Promise.all([
+      const [skillsRes, profileRes, matchesRes, prefsRes] = await Promise.all([
         supabase.from("skills").select("*").eq("user_id", user.id),
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }),
+        supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
       ]);
       setSkills(skillsRes.data ?? []);
       setProfile(profileRes.data);
       setSavedJobs(matchesRes.data ?? []);
+
+      // Restore filters from profile & preferences
+      if (profileRes.data?.experience_level) {
+        setExperienceFilter(profileRes.data.experience_level);
+      }
+      if (prefsRes.data?.remote_preference && prefsRes.data.remote_preference !== "any") {
+        setWorkTypeFilter(prefsRes.data.remote_preference);
+      }
+
       setInitialLoading(false);
     };
     load();
   }, [user]);
+
+  // Persist filter changes to DB
+  const saveFilterPreferences = async (experience: string, workType: string) => {
+    if (!user) return;
+    // Save experience level to profiles
+    if (experience !== "all") {
+      await supabase.from("profiles").update({ experience_level: experience }).eq("user_id", user.id);
+    }
+    // Save work type to user_preferences (upsert)
+    const prefValue = workType === "all" ? "any" : workType;
+    const { data: existing } = await supabase.from("user_preferences").select("id").eq("user_id", user.id).single();
+    if (existing) {
+      await supabase.from("user_preferences").update({ remote_preference: prefValue }).eq("user_id", user.id);
+    } else {
+      await supabase.from("user_preferences").insert({ user_id: user.id, remote_preference: prefValue });
+    }
+  };
+
+  const handleExperienceChange = (val: string) => {
+    setExperienceFilter(val);
+    saveFilterPreferences(val, workTypeFilter);
+  };
+
+  const handleWorkTypeChange = (val: string) => {
+    setWorkTypeFilter(val);
+    saveFilterPreferences(experienceFilter, val);
+  };
 
   const discoverJobs = async () => {
     if (!user || skills.length === 0) {
