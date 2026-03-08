@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Loader2, Sparkles, CheckCircle2, FileText,
   Target, Zap, Tag, Lightbulb, ArrowUpRight, Briefcase, Upload,
-  BarChart3,
+  BarChart3, AlertTriangle, Key,
 } from "lucide-react";
 
 const StandaloneOptimizer = () => {
