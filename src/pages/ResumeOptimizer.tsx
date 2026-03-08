@@ -111,17 +111,6 @@ const ResumeOptimizer = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/30 glass sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between h-14 px-4">
-          <Link to="/jobs" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back to Jobs
-          </Link>
-          <Link to="/" className="flex items-center gap-2 font-bold">
-            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain" />
-            JobPilot
-          </Link>
-        </div>
-      </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Job target card */}
