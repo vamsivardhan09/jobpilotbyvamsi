@@ -447,15 +447,7 @@ const JobDiscovery = () => {
                     {/* Apply button inline for quick access */}
                     {job.apply_url && (
                       <div className="mt-3 pt-3 border-t border-border/30">
-                        <a
-                          href={job.apply_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                          <ExternalLink className="w-3 h-3" /> Apply Now
-                        </a>
+                        <ApplyButton job={job} compact />
                       </div>
                     )}
                   </motion.div>
