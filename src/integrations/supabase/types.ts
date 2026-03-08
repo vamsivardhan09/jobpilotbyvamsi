@@ -14,6 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
+      interview_questions: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          feedback: Json | null
+          id: string
+          question_number: number
+          question_text: string
+          score: number | null
+          session_id: string
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          question_number: number
+          question_text: string
+          score?: number | null
+          session_id: string
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          question_number?: number
+          question_text?: string
+          score?: number | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_sessions: {
+        Row: {
+          communication_score: number | null
+          completed_at: string | null
+          confidence_score: number | null
+          created_at: string
+          id: string
+          improvements: string[] | null
+          interview_type: string
+          job_role: string
+          problem_solving_score: number | null
+          recommended_topics: string[] | null
+          status: string
+          strengths: string[] | null
+          technical_score: number | null
+          total_score: number | null
+          user_id: string
+        }
+        Insert: {
+          communication_score?: number | null
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          improvements?: string[] | null
+          interview_type: string
+          job_role: string
+          problem_solving_score?: number | null
+          recommended_topics?: string[] | null
+          status?: string
+          strengths?: string[] | null
+          technical_score?: number | null
+          total_score?: number | null
+          user_id: string
+        }
+        Update: {
+          communication_score?: number | null
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          improvements?: string[] | null
+          interview_type?: string
+          job_role?: string
+          problem_solving_score?: number | null
+          recommended_topics?: string[] | null
+          status?: string
+          strengths?: string[] | null
+          technical_score?: number | null
+          total_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_matches: {
         Row: {
           apply_url: string | null
