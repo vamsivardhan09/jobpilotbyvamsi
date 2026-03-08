@@ -344,22 +344,13 @@ const JobDiscovery = () => {
                 </div>
               )}
 
-              <div className="flex gap-3">
-                {selectedJob.id && (
-                  <Button variant="hero" className="flex-1" asChild>
-                    <Link to={`/optimize?job=${selectedJob.id}`}>
-                      <FileText className="w-4 h-4 mr-2" /> Optimize Resume
-                    </Link>
-                  </Button>
-                )}
-                {selectedJob.apply_url && (
-                  <Button variant="hero-outline" className="flex-1" asChild>
-                    <a href={selectedJob.apply_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-2" /> Apply
-                    </a>
-                  </Button>
-                )}
-              </div>
+              {selectedJob.id && (
+                <Button variant="hero" className="w-full" asChild>
+                  <Link to={`/optimize?job=${selectedJob.id}`}>
+                    <FileText className="w-4 h-4 mr-2" /> Optimize Resume
+                  </Link>
+                </Button>
+              )}
             </motion.div>
           )}
         </div>
