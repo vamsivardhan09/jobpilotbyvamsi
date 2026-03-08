@@ -1,18 +1,18 @@
-import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Briefcase, ArrowLeft, Loader2, Download, Eye,
-  Palette, CheckCircle2,
+  Loader2, Download, Eye,
+  Palette, CheckCircle2, Pencil,
 } from "lucide-react";
 import ResumeTemplate, { TEMPLATE_OPTIONS, TemplateName, ResumeData } from "@/components/resume-templates";
 import { generateResumePDF, buildPDFFileName } from "@/lib/pdf-generator";
 import { mapToResumeData } from "@/lib/resume-data-mapper";
+import ResumeEditor from "@/components/ResumeEditor";
 
 const ResumePreview = () => {
   const { user } = useAuth();
@@ -24,6 +24,7 @@ const ResumePreview = () => {
 
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [template, setTemplate] = useState<TemplateName>("modern-tech");
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [jobTitle, setJobTitle] = useState("");
@@ -32,7 +33,6 @@ const ResumePreview = () => {
   useEffect(() => {
     if (!user || !optimizedId) return;
     const load = async () => {
-      // Fetch optimized resume
       const { data: opt } = await supabase
         .from("optimized_resumes")
         .select("*")
@@ -46,7 +46,6 @@ const ResumePreview = () => {
         return;
       }
 
-      // Fetch job match info
       let jobData: any = null;
       if (opt.job_match_id) {
         const { data } = await supabase.from("job_matches").select("title, company").eq("id", opt.job_match_id).single();
@@ -55,7 +54,6 @@ const ResumePreview = () => {
       setJobTitle(jobData?.title || "");
       setJobCompany(jobData?.company || "");
 
-      // Fetch profile + original resume parsed data
       const [profileRes, resumeRes] = await Promise.all([
         supabase.from("profiles").select("full_name, headline").eq("user_id", user.id).single(),
         opt.original_resume_id
@@ -89,6 +87,12 @@ const ResumePreview = () => {
     }
   };
 
+  const handleSaveEdit = (updated: ResumeData) => {
+    setResumeData(updated);
+    setEditing(false);
+    toast({ title: "Resume updated!", description: "Your changes are reflected in the preview." });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -106,9 +110,33 @@ const ResumePreview = () => {
     );
   }
 
+  // Editing mode — side-by-side editor + live preview
+  if (editing) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        {/* Editor panel */}
+        <div className="w-full lg:w-[480px] border-r border-border/30 bg-card flex flex-col h-screen sticky top-0">
+          <ResumeEditor
+            data={resumeData}
+            onSave={handleSaveEdit}
+            onCancel={() => setEditing(false)}
+          />
+        </div>
+        {/* Live preview */}
+        <div className="hidden lg:flex flex-1 flex-col items-center overflow-y-auto p-6 bg-muted/20">
+          <p className="text-xs text-muted-foreground mb-3">Live Preview — changes reflect after saving</p>
+          <div className="border border-border/30 rounded-xl overflow-hidden shadow-lg inline-block">
+            <div className="transform scale-[0.55] origin-top-left" style={{ width: "210mm" }}>
+              <ResumeTemplate template={template} data={resumeData} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header + Controls */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
@@ -124,19 +152,29 @@ const ResumePreview = () => {
                 </p>
               )}
             </div>
-            <Button
-              variant="hero"
-              size="lg"
-              onClick={handleDownload}
-              disabled={downloading}
-              className="shrink-0"
-            >
-              {downloading ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating PDF...</>
-              ) : (
-                <><Download className="w-4 h-4 mr-2" /> Download PDF</>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="hero-outline"
+                size="lg"
+                onClick={() => setEditing(true)}
+                className="shrink-0"
+              >
+                <Pencil className="w-4 h-4 mr-2" /> Edit Resume
+              </Button>
+              <Button
+                variant="hero"
+                size="lg"
+                onClick={handleDownload}
+                disabled={downloading}
+                className="shrink-0"
+              >
+                {downloading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating PDF...</>
+                ) : (
+                  <><Download className="w-4 h-4 mr-2" /> Download PDF</>
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Template selector */}
@@ -145,7 +183,7 @@ const ResumePreview = () => {
               <Palette className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium">Choose Template</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {TEMPLATE_OPTIONS.map((t) => (
                 <button
                   key={t.id}
@@ -181,6 +219,9 @@ const ResumePreview = () => {
 
         {/* Bottom actions */}
         <div className="flex gap-3 mt-6">
+          <Button variant="hero-outline" className="flex-1" onClick={() => setEditing(true)}>
+            <Pencil className="w-4 h-4 mr-2" /> Edit Resume
+          </Button>
           <Button variant="hero" className="flex-1" onClick={handleDownload} disabled={downloading}>
             <Download className="w-4 h-4 mr-2" /> Download PDF
           </Button>
