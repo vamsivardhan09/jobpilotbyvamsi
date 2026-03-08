@@ -240,7 +240,7 @@ serve(async (req) => {
   }
 
   try {
-    const { skills, experienceLevel, preferredRoles, location, page = 1 } = await req.json();
+    const { skills, experienceLevel, preferredRoles, location, workType, page = 1 } = await req.json();
 
     if (!skills || !Array.isArray(skills) || skills.length === 0) {
       return new Response(
@@ -256,7 +256,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const skillNames = skills.map((s: any) => typeof s === "string" ? s : s.name);
-    const queries = buildSearchQueries(skillNames, preferredRoles || [], location || "India");
+    const queries = buildSearchQueries(skillNames, preferredRoles || [], location || "India", experienceLevel || "", workType || "");
 
     console.log("Running Serper queries:", queries);
 
