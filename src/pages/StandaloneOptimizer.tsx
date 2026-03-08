@@ -70,8 +70,10 @@ const StandaloneOptimizer = () => {
 
       setResult(data.data);
 
-      // Use AI's real score instead of fake calculation
-      setAtsScore(Math.round(data.data.ats_match_score || 0));
+      // Use AI's real scores
+      setOriginalScore(Math.round(data.data.original_ats_score || 0));
+      setOptimizedScore(Math.round(data.data.optimized_ats_score || 0));
+      setAtsScore(Math.round(data.data.original_ats_score || 0));
 
       // Save to optimized_resumes
       const { data: insertedRow } = await supabase.from("optimized_resumes").insert({
