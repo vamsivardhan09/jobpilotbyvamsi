@@ -32,6 +32,7 @@ const App = () => (
             <Route path="/upload" element={<ProtectedRoute><ResumeUpload /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><JobDiscovery /></ProtectedRoute>} />
             <Route path="/optimize" element={<ProtectedRoute><ResumeOptimizer /></ProtectedRoute>} />
+            <Route path="/resume-preview" element={<ProtectedRoute><ResumePreview /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
