@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import ResumeUpload from "./pages/ResumeUpload";
 import JobDiscovery from "./pages/JobDiscovery";
 import ResumeOptimizer from "./pages/ResumeOptimizer";
+import StandaloneOptimizer from "./pages/StandaloneOptimizer";
 import ResumePreview from "./pages/ResumePreview";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
