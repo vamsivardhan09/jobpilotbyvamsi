@@ -7,29 +7,41 @@ const corsHeaders = {
 };
 
 // Build multiple search queries for comprehensive coverage
-function buildSearchQueries(skillNames: string[], preferredRoles: string[], location: string): string[] {
+function buildSearchQueries(skillNames: string[], preferredRoles: string[], location: string, experienceLevel: string, workType: string): string[] {
   const queries: string[] = [];
   const loc = location || "India";
 
-  // Role-based queries — target specific job postings, not search pages
+  const expTag = experienceLevel === "fresher" ? "fresher entry level"
+    : experienceLevel === "junior" ? "junior 1-3 years"
+    : experienceLevel === "mid" ? "mid level 3-5 years"
+    : experienceLevel === "senior" ? "senior 5+ years"
+    : experienceLevel === "lead" ? "lead staff 8+ years"
+    : "";
+
+  const workTag = workType === "remote" ? "remote"
+    : workType === "hybrid" ? "hybrid"
+    : workType === "onsite" ? "on-site office"
+    : "";
+
+  // Role-based queries
   if (preferredRoles?.length) {
     for (const role of preferredRoles.slice(0, 2)) {
-      queries.push(`"${role}" hiring ${loc} site:linkedin.com/jobs/view`);
-      queries.push(`"${role}" apply now ${loc} 2026`);
+      queries.push(`"${role}" hiring ${loc} ${expTag} ${workTag} site:linkedin.com/jobs/view`.trim());
+      queries.push(`"${role}" ${expTag} ${workTag} apply now ${loc} 2026`.trim());
     }
   }
 
-  // Skill-based queries targeting actual postings
+  // Skill-based queries
   const topSkills = skillNames.slice(0, 3);
   if (topSkills.length > 0) {
-    queries.push(`${topSkills.join(" ")} developer opening ${loc} apply`);
-    queries.push(`${topSkills[0]} ${topSkills[1] || ""} hiring ${loc} site:lever.co OR site:greenhouse.io OR site:linkedin.com/jobs/view`);
-    queries.push(`${topSkills.join(" ")} engineer position remote apply now`);
+    queries.push(`${topSkills.join(" ")} developer opening ${loc} ${expTag} ${workTag} apply`.trim());
+    queries.push(`${topSkills[0]} ${topSkills[1] || ""} ${expTag} hiring ${loc} site:lever.co OR site:greenhouse.io OR site:linkedin.com/jobs/view`.trim());
+    queries.push(`${topSkills.join(" ")} engineer ${workTag} ${expTag} position apply now`.trim());
   }
 
-  // Location-specific if provided
+  // Location-specific
   if (location && location.toLowerCase() !== "india") {
-    queries.push(`${preferredRoles?.[0] || topSkills[0]} opening ${location} apply`);
+    queries.push(`${preferredRoles?.[0] || topSkills[0]} opening ${location} ${expTag} ${workTag} apply`.trim());
   }
 
   return queries.slice(0, 5);
@@ -228,7 +240,7 @@ serve(async (req) => {
   }
 
   try {
-    const { skills, experienceLevel, preferredRoles, location, page = 1 } = await req.json();
+    const { skills, experienceLevel, preferredRoles, location, workType, page = 1 } = await req.json();
 
     if (!skills || !Array.isArray(skills) || skills.length === 0) {
       return new Response(
@@ -244,7 +256,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const skillNames = skills.map((s: any) => typeof s === "string" ? s : s.name);
-    const queries = buildSearchQueries(skillNames, preferredRoles || [], location || "India");
+    const queries = buildSearchQueries(skillNames, preferredRoles || [], location || "India", experienceLevel || "", workType || "");
 
     console.log("Running Serper queries:", queries);
 

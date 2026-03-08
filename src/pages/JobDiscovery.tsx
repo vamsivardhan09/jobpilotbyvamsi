@@ -40,6 +40,8 @@ const JobDiscovery = () => {
   const [selectedJob, setSelectedJob] = useState<JobMatch | null>(null);
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "stretch">("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
+  const [experienceFilter, setExperienceFilter] = useState<string>("all");
+  const [workTypeFilter, setWorkTypeFilter] = useState<string>("all");
   const [visibleCount, setVisibleCount] = useState(15);
   const [totalResults, setTotalResults] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -84,9 +86,10 @@ const JobDiscovery = () => {
       const { data, error } = await supabase.functions.invoke("discover-jobs", {
         body: {
           skills: skills.map((s) => ({ name: s.name, category: s.category, proficiency: s.proficiency })),
-          experienceLevel: profile?.experience_level,
+          experienceLevel: experienceFilter !== "all" ? experienceFilter : (profile?.experience_level || ""),
           preferredRoles: profile?.preferred_roles,
           location: locationFilter !== "all" ? locationFilter : (profile?.preferred_locations?.[0] || "India"),
+          workType: workTypeFilter !== "all" ? workTypeFilter : "",
         },
       });
 
@@ -160,6 +163,22 @@ const JobDiscovery = () => {
     { value: "Delhi", label: "Delhi / NCR" },
     { value: "Pune", label: "Pune" },
     { value: "Chennai", label: "Chennai" },
+  ];
+
+  const experienceOptions = [
+    { value: "all", label: "Any Experience" },
+    { value: "fresher", label: "Fresher (0-1 yr)" },
+    { value: "junior", label: "Junior (1-3 yrs)" },
+    { value: "mid", label: "Mid (3-5 yrs)" },
+    { value: "senior", label: "Senior (5-8 yrs)" },
+    { value: "lead", label: "Lead (8+ yrs)" },
+  ];
+
+  const workTypeOptions = [
+    { value: "all", label: "Any Work Type" },
+    { value: "remote", label: "Remote" },
+    { value: "hybrid", label: "Hybrid" },
+    { value: "onsite", label: "On-site" },
   ];
 
   const allJobs = jobs.length > 0 ? jobs : savedJobs;
@@ -331,12 +350,40 @@ const JobDiscovery = () => {
               </select>
             </div>
 
+            {/* Experience dropdown */}
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
+              <select
+                value={experienceFilter}
+                onChange={(e) => { setExperienceFilter(e.target.value); setVisibleCount(15); }}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+              >
+                {experienceOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Work type dropdown */}
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+              <select
+                value={workTypeFilter}
+                onChange={(e) => { setWorkTypeFilter(e.target.value); setVisibleCount(15); }}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+              >
+                {workTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Result count */}
-            {locationFilter !== "all" && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {displayJobs.length} result{displayJobs.length !== 1 ? "s" : ""}
-              </span>
-            )}
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {displayJobs.length} result{displayJobs.length !== 1 ? "s" : ""}
+            </span>
           </motion.div>
         )}
 
