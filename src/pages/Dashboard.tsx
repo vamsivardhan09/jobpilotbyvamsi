@@ -122,6 +122,9 @@ const Dashboard = () => {
                 <Link to="/jobs"><Target className="w-4 h-4 mr-2" /> Discover Jobs</Link>
               </Button>
               <Button variant="hero-outline" className="w-full justify-start" asChild>
+                <Link to="/ats-optimizer"><Sparkles className="w-4 h-4 mr-2" /> Resume Optimization</Link>
+              </Button>
+              <Button variant="hero-outline" className="w-full justify-start" asChild>
                 <Link to="/profile"><User className="w-4 h-4 mr-2" /> Edit Profile</Link>
               </Button>
             </div>
