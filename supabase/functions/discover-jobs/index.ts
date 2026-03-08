@@ -13,16 +13,16 @@ function buildSearchQueries(skillNames: string[], preferredRoles: string[], loca
   // Role-based queries (India-first)
   if (preferredRoles?.length) {
     for (const role of preferredRoles.slice(0, 2)) {
-      queries.push(`${role} jobs India apply`);
-      queries.push(`${role} jobs remote hiring`);
+      queries.push(`${role} jobs ${location || "India"} apply 2026`);
+      queries.push(`${role} jobs remote hiring 2026`);
     }
   }
 
   // Skill-based queries
   const topSkills = skillNames.slice(0, 3);
   if (topSkills.length > 0) {
-    queries.push(`${topSkills.join(" ")} developer jobs India apply`);
-    queries.push(`${topSkills[0]} developer fresher hiring India`);
+    queries.push(`${topSkills.join(" ")} developer jobs ${location || "India"} apply`);
+    queries.push(`${topSkills[0]} ${topSkills[1] || ""} fresher jobs hiring India`);
     queries.push(`${topSkills.join(" ")} jobs remote apply`);
   }
 
@@ -31,7 +31,7 @@ function buildSearchQueries(skillNames: string[], preferredRoles: string[], loca
     queries.push(`${preferredRoles?.[0] || topSkills[0]} jobs ${location} apply`);
   }
 
-  return queries.slice(0, 5); // Max 5 queries
+  return queries.slice(0, 5);
 }
 
 // Search jobs using Serper API
@@ -42,10 +42,7 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
       "X-API-KEY": serperKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      q: query,
-      num: 10,
-    }),
+    body: JSON.stringify({ q: query, num: 10 }),
   });
 
   if (!response.ok) {
@@ -58,11 +55,9 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
   const data = await response.json();
   const results: any[] = [];
 
-  // Extract from organic results
   for (const item of (data.organic || [])) {
     const link = item.link || "";
-    // Filter for job-related URLs from known job platforms and career pages
-    if (isJobUrl(link)) {
+    if (isJobUrl(link) && !isAggregatorPage(item.title, item.snippet, link)) {
       results.push({
         title: item.title || "",
         snippet: item.snippet || "",
@@ -75,16 +70,35 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
   return results;
 }
 
+// Filter out aggregator/listing index pages (not actual job postings)
+function isAggregatorPage(title: string, snippet: string, url: string): boolean {
+  const lower = (title + " " + snippet).toLowerCase();
+  // Patterns that indicate aggregator pages, not individual jobs
+  const aggregatorPatterns = [
+    /\d{2,},?\d{3,}\+?\s*(software|developer|engineer|jobs)/i,  // "103580 Software Engineer Jobs"
+    /\d{1,3},\d{3}\+?\s*(open )?jobs/i,                          // "2,07,032 jobs"
+    /top\s+\d+\+?\s+/i,                                          // "Top 50,000+"
+    /\d+\s+new\)/i,                                               // "(1,476 new)"
+    /india'?s?\s+no\.?\s*1\s+job\s+site/i,                       // "India's No.1 Job Site"
+    /apply to \d{3,}/i,                                           // "Apply To 103580"
+    /browse\s+\d{3,}/i,                                           // "Browse 13173"
+  ];
+  return aggregatorPatterns.some(p => p.test(lower));
+}
+
 function isJobUrl(url: string): boolean {
   const jobDomains = [
-    "linkedin.com/jobs", "linkedin.com/in/", "indeed.com", "indeed.co.in",
+    "linkedin.com/jobs", "indeed.com", "indeed.co.in",
     "naukri.com", "glassdoor.com", "glassdoor.co.in",
     "wellfound.com", "internshala.com",
     "lever.co", "greenhouse.io", "workday.com", "smartrecruiters.com",
     "jobs.lever.co", "boards.greenhouse.io",
     "careers.", "jobs.", "/careers", "/jobs", "/apply",
+    "ziprecruiter.com", "builtin",
   ];
   const lowerUrl = url.toLowerCase();
+  // Exclude LinkedIn profile pages
+  if (lowerUrl.includes("linkedin.com/in/")) return false;
   return jobDomains.some(domain => lowerUrl.includes(domain));
 }
 
@@ -98,10 +112,11 @@ function extractSource(url: string): string {
   if (lowerUrl.includes("internshala.com")) return "Internshala";
   if (lowerUrl.includes("lever.co")) return "Lever";
   if (lowerUrl.includes("greenhouse.io")) return "Greenhouse";
+  if (lowerUrl.includes("ziprecruiter.com")) return "ZipRecruiter";
+  if (lowerUrl.includes("builtin")) return "Built In";
   try { return new URL(url).hostname.replace("www.", ""); } catch { return "Company"; }
 }
 
-// Validate URL format
 function isValidUrl(url: string): boolean {
   try {
     const u = new URL(url);
@@ -111,10 +126,8 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-// Parse job info from search result title/snippet
 function parseJobInfo(result: any): { title: string; company: string; location: string } {
   const raw = result.title || "";
-  // Common patterns: "Job Title - Company | Location", "Job Title at Company - Location"
   let title = raw;
   let company = result.source || "Unknown";
   let location = "";
@@ -124,9 +137,8 @@ function parseJobInfo(result: any): { title: string; company: string; location: 
   if (dashParts.length >= 2) {
     title = dashParts[0].trim();
     const rest = dashParts.slice(1).join(" - ");
-    // Remove platform names from company
-    const cleaned = rest.replace(/\| (LinkedIn|Indeed|Glassdoor|Naukri|Wellfound|Internshala).*/i, "").trim();
-    if (cleaned) company = cleaned;
+    const cleaned = rest.replace(/\|\s*(LinkedIn|Indeed|Glassdoor|Naukri|Wellfound|Internshala|ZipRecruiter|Built In).*/i, "").trim();
+    if (cleaned && cleaned.length < 80) company = cleaned;
   }
 
   // Try "Title at Company" pattern
@@ -136,24 +148,42 @@ function parseJobInfo(result: any): { title: string; company: string; location: 
     company = atParts.slice(1).join(" at ").replace(/\|.*/g, "").trim();
   }
 
-  // Extract location from snippet
-  const snippet = result.snippet || "";
-  const locMatch = snippet.match(/(?:Location|location|📍|in)\s*:?\s*([^.·,\n]+(?:,\s*[^.·,\n]+)?)/i);
-  if (locMatch) location = locMatch[1].trim();
+  // Clean up title — remove trailing platform names
+  title = title.replace(/\s*\|\s*(LinkedIn|Indeed|Glassdoor|Naukri|Wellfound|Internshala|ZipRecruiter|Built In).*$/i, "").trim();
 
-  // Check for India/Remote indicators
+  // Extract location from snippet with better patterns
+  const snippet = result.snippet || "";
+  const locPatterns = [
+    /(?:Location|📍)\s*:?\s*([A-Z][a-zA-Z\s]+(?:,\s*[A-Z][a-zA-Z\s]+){0,2})/,
+    /in\s+([A-Z][a-zA-Z]+(?:,\s*[A-Z]{2})?(?:\s*\((?:Remote|Hybrid)\))?)/,
+    /([A-Z][a-zA-Z]+,\s*(?:India|IN|US|USA|UK|CA|Remote))/,
+  ];
+  for (const pat of locPatterns) {
+    const m = snippet.match(pat);
+    if (m) { location = m[1].trim().substring(0, 60); break; }
+  }
+
+  // Fallback location detection
   if (!location) {
-    if (snippet.toLowerCase().includes("india") || result.link?.includes(".co.in")) location = "India";
-    else if (snippet.toLowerCase().includes("remote")) location = "Remote";
+    const lowerSnippet = snippet.toLowerCase();
+    const lowerUrl = (result.link || "").toLowerCase();
+    if (lowerSnippet.includes("bengaluru") || lowerSnippet.includes("bangalore")) location = "Bengaluru, India";
+    else if (lowerSnippet.includes("hyderabad")) location = "Hyderabad, India";
+    else if (lowerSnippet.includes("mumbai")) location = "Mumbai, India";
+    else if (lowerSnippet.includes("delhi") || lowerSnippet.includes("noida") || lowerSnippet.includes("gurgaon")) location = "Delhi / NCR, India";
+    else if (lowerSnippet.includes("pune")) location = "Pune, India";
+    else if (lowerSnippet.includes("chennai")) location = "Chennai, India";
+    else if (lowerUrl.includes(".co.in") || lowerUrl.includes("naukri") || lowerUrl.includes("internshala")) location = "India";
+    else if (lowerSnippet.includes("remote")) location = "Remote";
+    else location = "";
   }
 
   return { title: title.substring(0, 120), company: company.substring(0, 100), location };
 }
 
-// Determine location priority: India=3, Remote=2, International=1
 function locationPriority(location: string, url: string): number {
   const lower = (location + " " + url).toLowerCase();
-  if (lower.includes("india") || lower.includes(".co.in") || lower.includes("naukri") || lower.includes("internshala")) return 3;
+  if (lower.includes("india") || lower.includes(".co.in") || lower.includes("naukri") || lower.includes("internshala") || lower.includes("bengaluru") || lower.includes("hyderabad") || lower.includes("mumbai") || lower.includes("delhi") || lower.includes("pune") || lower.includes("chennai")) return 3;
   if (lower.includes("remote") || lower.includes("anywhere")) return 2;
   return 1;
 }
@@ -184,7 +214,6 @@ serve(async (req) => {
 
     console.log("Running Serper queries:", queries);
 
-    // Run all search queries in parallel
     const allResults = await Promise.all(
       queries.map(q => searchJobs(q, SERPER_API_KEY).catch(err => {
         console.warn("Query failed:", q, err.message);
@@ -218,16 +247,19 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Parse job info from results
-    const jobCandidates = uniqueResults.map(r => ({
-      ...parseJobInfo(r),
-      apply_url: r.link,
-      source: r.source,
-      snippet: r.snippet,
-      location_priority: locationPriority(parseJobInfo(r).location, r.link),
-    }));
+    // Parse job info
+    const jobCandidates = uniqueResults.map(r => {
+      const info = parseJobInfo(r);
+      return {
+        ...info,
+        apply_url: r.link,
+        source: r.source,
+        snippet: r.snippet,
+        location_priority: locationPriority(info.location, r.link),
+      };
+    });
 
-    // Use AI to score jobs against candidate skills
+    // Use AI to score
     const jobSummaries = jobCandidates.slice(0, 20).map((job, i) => ({
       index: i,
       title: job.title,
@@ -248,7 +280,12 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a job matching engine. Given candidate skills and job listings from search results, analyze each job and determine skill match. For each job, extract the likely required skills from the title/snippet, determine which candidate skills match, identify missing skills, and assign a match score (0-100). Only assign scores above 70 for strong skill overlap. Be strict about relevance.`,
+            content: `You are a job matching engine. Given candidate skills and job listings, analyze each and determine skill match. For each job, extract the likely required skills from title/snippet, determine which candidate skills match, identify missing skills, and assign a match score (0-100). Rules:
+- Only assign 80+ for strong direct skill overlap (3+ matching technical skills)
+- Assign 60-79 for partial matches (1-2 key skills match)
+- Assign 30-59 for weak/tangential matches
+- Assign below 30 for irrelevant jobs
+- Mark aggregator listing pages (e.g. "103580 Jobs on Naukri") as is_relevant: false`,
           },
           {
             role: "user",
@@ -309,13 +346,12 @@ ${JSON.stringify(jobSummaries)}`,
       console.warn("AI scoring failed, using basic matching");
     }
 
-    // Combine and filter
     const jobs = jobCandidates.slice(0, 20).map((job, i) => {
       const score = scoreMap[i];
       return {
         title: job.title,
         company: job.company,
-        location: job.location || "Unknown",
+        location: job.location || "",
         description: job.snippet || "",
         salary_range: null as string | null,
         match_score: score?.match_score ?? 50,
@@ -328,15 +364,12 @@ ${JSON.stringify(jobSummaries)}`,
         is_relevant: score?.is_relevant ?? true,
       };
     })
-    // Filter out irrelevant results
     .filter(job => job.is_relevant !== false)
-    // Sort: location priority desc, then match score desc
     .sort((a, b) => {
       if (b.location_priority !== a.location_priority) return b.location_priority - a.location_priority;
       return b.match_score - a.match_score;
     });
 
-    // Paginate
     const pageSize = 15;
     const start = (page - 1) * pageSize;
     const paginatedJobs = jobs.slice(start, start + pageSize);
