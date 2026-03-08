@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Loader2, Sparkles, CheckCircle2, FileText,
   Target, Zap, Tag, Lightbulb, ArrowUpRight, Briefcase, Upload,
-  BarChart3,
+  BarChart3, AlertTriangle, Key,
 } from "lucide-react";
 
 const StandaloneOptimizer = () => {
@@ -68,11 +68,8 @@ const StandaloneOptimizer = () => {
 
       setResult(data.data);
 
-      // Calculate ATS score from keywords and improvements
-      const keywordCount = data.data.ats_keywords?.length || 0;
-      const improvementBoost = data.data.match_improvement || 0;
-      const baseScore = Math.min(95, 60 + keywordCount * 1.5 + improvementBoost);
-      setAtsScore(Math.round(baseScore));
+      // Use AI's real score instead of fake calculation
+      setAtsScore(Math.round(data.data.ats_match_score || 0));
 
       // Save to optimized_resumes
       const { data: insertedRow } = await supabase.from("optimized_resumes").insert({
@@ -190,6 +187,20 @@ const StandaloneOptimizer = () => {
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            {/* Mismatch Warning */}
+            {result.is_good_match === false && (
+              <div className="rounded-xl p-6 border-2 border-destructive/30 bg-destructive/5">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-destructive shrink-0 mt-0.5" />
+                  <div>
+                    <h2 className="text-lg font-bold text-destructive mb-1">Not a Strong Match</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{result.mismatch_reason}</p>
+                    <p className="text-xs text-muted-foreground mt-2">Consider applying to roles that better match your background, or significantly upskill in the required areas first.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ATS Score */}
             {atsScore !== null && (
               <div className="glass rounded-xl p-6 text-center">
@@ -294,6 +305,21 @@ const StandaloneOptimizer = () => {
                 ))}
               </div>
             </div>
+
+            {/* Keywords to Add Manually */}
+            {result.keywords_to_add_manually?.length > 0 && (
+              <div className="glass rounded-xl p-6 border border-primary/20">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Key className="w-4 h-4 text-primary" /> Keywords to Add Manually Before Applying
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">Add these exact keywords into your resume (in context) to boost your ATS score:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.keywords_to_add_manually.map((kw: string, i: number) => (
+                    <span key={i} className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 font-bold">{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Tips */}
             {result.tips?.length > 0 && (
