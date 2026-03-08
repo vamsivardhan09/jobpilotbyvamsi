@@ -10,7 +10,7 @@ export const Footer = () => {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Briefcase className="w-3.5 h-3.5 text-primary-foreground" />
             </div>
-            JobMind
+            JobPilot
           </Link>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
@@ -18,7 +18,7 @@ export const Footer = () => {
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
           </div>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} JobMind. All rights reserved.
+            © {new Date().getFullYear()} JobPilot. All rights reserved.
           </p>
         </div>
       </div>

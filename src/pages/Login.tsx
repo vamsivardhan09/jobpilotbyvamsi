@@ -50,7 +50,7 @@ const Login = () => {
               <Briefcase className="w-6 h-6 text-primary-foreground" />
             </div>
             <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
-            <p className="text-sm text-muted-foreground">Sign in to your JobMind account</p>
+            <p className="text-sm text-muted-foreground">Sign in to your JobPilot account</p>
           </div>
 
           <div className="glass rounded-xl p-6">

@@ -17,7 +17,7 @@ const testimonials = [
   {
     name: "Priya Sharma",
     role: "Data Scientist at Meta",
-    content: "I was spending hours on job boards every day. JobMind automated the entire process and matched me with higher quality opportunities.",
+    content: "I was spending hours on job boards every day. JobPilot automated the entire process and matched me with higher quality opportunities.",
     avatar: "PS",
   },
 ];
