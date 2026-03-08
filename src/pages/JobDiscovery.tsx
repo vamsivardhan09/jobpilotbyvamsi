@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Briefcase, ArrowLeft, Search, Target, MapPin, DollarSign,
   CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter, FileText,
-  ChevronDown, AlertTriangle, Lightbulb, Globe,
+  ChevronDown, AlertTriangle, Lightbulb, Globe, Copy, ClipboardCheck,
 } from "lucide-react";
 
 type JobMatch = {
@@ -27,6 +27,152 @@ type JobMatch = {
   apply_url?: string;
   status?: string;
   source?: string;
+};
+
+const isLinkedInUrl = (url?: string) => url?.toLowerCase().includes("linkedin.com");
+
+const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolean }) => {
+  const [copied, setCopied] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const isLinkedIn = isLinkedInUrl(job.apply_url);
+
+  const searchQuery = `${job.title} ${job.company}`.trim();
+
+  const handleCopy = async (text: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!job.apply_url) return null;
+
+  if (!isLinkedIn) {
+    return (
+      <a
+        href={job.apply_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+      >
+        <ExternalLink className="w-3 h-3" /> Apply Now
+      </a>
+    );
+  }
+
+  return (
+    <div onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowGuide(!showGuide); }}
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+      >
+        <ExternalLink className="w-3 h-3" /> {showGuide ? "Hide Steps" : "How to Apply"}
+      </button>
+      {showGuide && (
+        <div className="mt-2 p-3 rounded-lg bg-primary/5 border border-primary/10 space-y-2" onClick={(e) => e.stopPropagation()}>
+          <p className="text-[11px] text-muted-foreground font-medium">LinkedIn may block direct links. Follow these steps:</p>
+          <div className="space-y-1.5">
+            <div className="flex items-start gap-2">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">1</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] text-foreground">Copy this search text:</p>
+                <button
+                  onClick={(e) => handleCopy(searchQuery, e)}
+                  className="mt-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-secondary border border-border/50 text-xs font-mono text-foreground hover:bg-secondary/80 transition-colors w-full text-left"
+                >
+                  <span className="truncate flex-1">{searchQuery}</span>
+                  {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-success shrink-0" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
+              <p className="text-[11px] text-foreground">Go to <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener noreferrer" className="text-primary underline">LinkedIn Jobs</a> and paste in the search bar</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
+              <p className="text-[11px] text-foreground">Find the matching job and click <strong>Apply</strong></p>
+            </div>
+          </div>
+          <a
+            href={job.apply_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" /> Try direct link anyway
+          </a>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ApplySection = ({ job }: { job: JobMatch }) => {
+  const [copied, setCopied] = useState(false);
+  const isLinkedIn = isLinkedInUrl(job.apply_url);
+  const searchQuery = `${job.title} ${job.company}`.trim();
+
+  const handleCopy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="space-y-3">
+      {isLinkedIn && job.apply_url && (
+        <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
+            <p className="text-xs font-medium text-foreground">LinkedIn may block direct links</p>
+          </div>
+          <p className="text-xs text-muted-foreground">Follow these steps to apply manually:</p>
+          <div className="space-y-2.5">
+            <div className="flex items-start gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">1</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-foreground mb-1.5">Copy this search text:</p>
+                <button
+                  onClick={() => handleCopy(searchQuery)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary border border-border/50 text-sm font-mono text-foreground hover:bg-secondary/80 transition-colors w-full text-left"
+                >
+                  <span className="truncate flex-1">{searchQuery}</span>
+                  {copied ? <ClipboardCheck className="w-4 h-4 text-success shrink-0" /> : <Copy className="w-4 h-4 text-muted-foreground shrink-0" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">2</span>
+              <p className="text-xs text-foreground">Open <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">LinkedIn Jobs</a> and paste it in the search bar</p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">3</span>
+              <p className="text-xs text-foreground">Find the matching listing and click <strong>Apply</strong></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        {job.apply_url && (
+          <Button variant="hero" className="flex-1" asChild>
+            <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-4 h-4 mr-2" /> {isLinkedIn ? "Try Direct Link" : "Apply Now"}
+            </a>
+          </Button>
+        )}
+        {job.id && (
+          <Button variant="hero-outline" className="flex-1" asChild>
+            <Link to={`/optimize?job=${job.id}`}>
+              <FileText className="w-4 h-4 mr-2" /> Optimize Resume
+            </Link>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const JobDiscovery = () => {
@@ -447,15 +593,7 @@ const JobDiscovery = () => {
                     {/* Apply button inline for quick access */}
                     {job.apply_url && (
                       <div className="mt-3 pt-3 border-t border-border/30">
-                        <a
-                          href={job.apply_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                          <ExternalLink className="w-3 h-3" /> Apply Now
-                        </a>
+                        <ApplyButton job={job} compact />
                       </div>
                     )}
                   </motion.div>
@@ -557,22 +695,7 @@ const JobDiscovery = () => {
                 </div>
               )}
 
-              <div className="flex gap-3">
-                {selectedJob.apply_url && (
-                  <Button variant="hero" className="flex-1" asChild>
-                    <a href={selectedJob.apply_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-2" /> Apply Now
-                    </a>
-                  </Button>
-                )}
-                {selectedJob.id && (
-                  <Button variant="hero-outline" className="flex-1" asChild>
-                    <Link to={`/optimize?job=${selectedJob.id}`}>
-                      <FileText className="w-4 h-4 mr-2" /> Optimize Resume
-                    </Link>
-                  </Button>
-                )}
-              </div>
+              <ApplySection job={selectedJob} />
             </motion.div>
           )}
         </div>
