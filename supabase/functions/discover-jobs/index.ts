@@ -9,26 +9,27 @@ const corsHeaders = {
 // Build multiple search queries for comprehensive coverage
 function buildSearchQueries(skillNames: string[], preferredRoles: string[], location: string): string[] {
   const queries: string[] = [];
+  const loc = location || "India";
 
-  // Role-based queries (India-first)
+  // Role-based queries — target specific job postings, not search pages
   if (preferredRoles?.length) {
     for (const role of preferredRoles.slice(0, 2)) {
-      queries.push(`${role} jobs ${location || "India"} apply 2026`);
-      queries.push(`${role} jobs remote hiring 2026`);
+      queries.push(`"${role}" hiring ${loc} site:linkedin.com/jobs/view`);
+      queries.push(`"${role}" apply now ${loc} 2026`);
     }
   }
 
-  // Skill-based queries
+  // Skill-based queries targeting actual postings
   const topSkills = skillNames.slice(0, 3);
   if (topSkills.length > 0) {
-    queries.push(`${topSkills.join(" ")} developer jobs ${location || "India"} apply`);
-    queries.push(`${topSkills[0]} ${topSkills[1] || ""} fresher jobs hiring India`);
-    queries.push(`${topSkills.join(" ")} jobs remote apply`);
+    queries.push(`${topSkills.join(" ")} developer opening ${loc} apply`);
+    queries.push(`${topSkills[0]} ${topSkills[1] || ""} hiring ${loc} site:lever.co OR site:greenhouse.io OR site:linkedin.com/jobs/view`);
+    queries.push(`${topSkills.join(" ")} engineer position remote apply now`);
   }
 
   // Location-specific if provided
   if (location && location.toLowerCase() !== "india") {
-    queries.push(`${preferredRoles?.[0] || topSkills[0]} jobs ${location} apply`);
+    queries.push(`${preferredRoles?.[0] || topSkills[0]} opening ${location} apply`);
   }
 
   return queries.slice(0, 5);
@@ -90,20 +91,28 @@ function isAggregatorPage(title: string, snippet: string, url: string): boolean 
 
   if (aggregatorPatterns.some(p => p.test(lower))) return true;
 
-  // Title-only patterns for generic listing pages
+  // Title-only patterns for generic listing pages (be careful not to filter real jobs)
   const titleAggregatorPatterns = [
-    /^([\w\s]+)\bjobs?\b\s*(in\s+\w+|near|$)/i,                  // "Software Developer Jobs in India"
     /^jobs?\s+for\s+/i,                                           // "Jobs For Software Developer"
     /\bjobs?\b\s*[-–]\s*\d{4}/i,                                  // "Jobs - 2026"
     /\bjobs?\s+by\s+\w+/i,                                        // "Jobs By Workable"
+    /\bjob\s+vacancies\b/i,                                       // "React Js Developer Job Vacancies"
+    /^\d+\s+\d+\s+to\s+\d+/i,                                    // "25 0 to 1 Year Experience..."
+    /\bjobs?\s*$/i,                                                // Title ending with just "Jobs"
   ];
 
   if (titleAggregatorPatterns.some(p => p.test(lowerTitle))) return true;
 
-  // URL patterns for search/listing pages
+  // URL patterns for search/listing pages on job boards
   const aggregatorUrlPatterns = [
-    /\/(search|jobs-in|job-listing|explore)\//i,
-    /[?&](q|query|keyword)=/i,
+    /indeed\.com\/q-/i,                                            // Indeed search URLs
+    /naukri\.com\/[\w-]+-jobs$/i,                                  // Naukri category pages
+    /naukri\.com\/[\w-]+-jobs-in-/i,                               // Naukri location search pages
+    /glassdoor\.com\/Job\/.*-jobs-SRCH/i,                          // Glassdoor search pages
+    /linkedin\.com\/jobs\/[\w-]+-jobs$/i,                          // LinkedIn search pages
+    /wellfound\.com\/role\/r\//i,                                  // Wellfound role listing pages
+    /ambitionbox\.com\/jobs\//i,                                   // AmbitionBox listing pages
+    /[?&](q|query|keyword)=/i,                                    // Any search query URLs
   ];
 
   if (aggregatorUrlPatterns.some(p => p.test(lowerUrl))) return true;
