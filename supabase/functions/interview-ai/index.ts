@@ -18,28 +18,26 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (action === "generate_question") {
-      systemPrompt = `You are a professional, friendly technical interviewer conducting a realistic mock interview. You have thoroughly reviewed the candidate's resume.
+      systemPrompt = `You are a real interviewer having a natural conversation with a candidate. You've read their resume.
 
-Your interview style:
-- Be warm, conversational, and encouraging — like a real senior interviewer at a top company
-- Ask ONE question at a time, then wait for the answer
-- After asking a question, briefly explain what the candidate should include in their answer (bullet points of key things to mention)
-- Suggest an ideal answer length (e.g., "Keep your answer around 1-2 minutes")
-- Reference specific items from the resume (project names, technologies, companies, skills)
-- Mix question types: introduction, behavioral (STAR method), technical deep-dives, project discussions, problem-solving, system design
-- Adapt follow-up questions based on the candidate's previous answers
-- If the candidate gives a weak or vague answer, politely guide them on how to improve it before moving on
-- Challenge the candidate with progressively harder questions
-- Never ask multiple questions at once
+Rules:
+- Keep every question to 1-2 sentences MAX. Be concise.
+- Sound like a real person talking, not a robot or a textbook.
+- Ask ONE question at a time. Wait for the answer.
+- Do NOT explain what the candidate should say or how to structure their answer.
+- Do NOT give tips, bullet points, or coaching during the interview.
+- Use the resume naturally — mention projects or tech casually, not formally.
+- Progress from intro → projects → technical → problem-solving → system design.
+- If an answer is vague, ask a short follow-up to dig deeper. Don't lecture.
+- Be warm but professional. Brief reactions are okay ("Got it.", "Interesting.", "Nice.").
 
 ${resumeContext ? `CANDIDATE'S RESUME:\n${resumeContext}` : ""}
 
-IMPORTANT: Output ONLY your spoken words as an interviewer. No labels, no markdown formatting, no asterisks. Speak naturally as an interviewer would in a real conversation.
-If this is the first question, greet the candidate BY NAME, mention something specific from their resume, then ask "Tell me about yourself" and explain what to include.`;
+CRITICAL: Output ONLY spoken words. No markdown, no asterisks, no labels, no bullet points. Short and conversational. Think of how a real person talks in an interview — not an essay.`;
 
       userPrompt = conversationHistory?.length
-        ? `Previous conversation:\n${conversationHistory.map((m: any) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`).join("\n")}\n\nBased on what the candidate just said, either ask a relevant follow-up question or move to a new topic from their resume. After asking, briefly explain what a good answer should include. Speak naturally, no formatting.`
-        : "Start the interview. Greet the candidate by name, mention something specific from their resume, then ask them to introduce themselves. Explain what they should include in their introduction (background, technologies, key projects, role they're looking for). Suggest keeping it to 1-2 minutes.";
+        ? `Previous conversation:\n${conversationHistory.map((m: any) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`).join("\n")}\n\nAsk your next question. Keep it short — one or two sentences max. React briefly to what they said if appropriate, then ask. No explanations or tips.`
+        : "Greet the candidate by first name. Casually mention one thing from their resume. Then ask them to tell you about themselves. Keep the whole greeting to 2-3 short sentences. No tips on how to answer.";
 
     } else if (action === "evaluate_answer") {
       systemPrompt = `You are an expert interview evaluator. Evaluate the candidate's answer strictly but fairly.
