@@ -356,11 +356,14 @@ const ResumeUpload = () => {
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button variant="hero" className="flex-1" onClick={() => navigate("/dashboard")}>
+              <Button variant="hero" className="flex-1" onClick={() => navigate("/jobs")}>
+                <Search className="w-4 h-4 mr-2" /> Discover Jobs
+              </Button>
+              <Button variant="hero-outline" className="flex-1" onClick={() => navigate("/dashboard")}>
                 Go to Dashboard
               </Button>
-              <Button variant="hero-outline" className="flex-1" onClick={() => { setFile(null); setAnalysisResult(null); setStep("upload"); }}>
-                Upload Another
+              <Button variant="outline" className="flex-1" onClick={() => { setFile(null); setAnalysisResult(null); setStep("upload"); }}>
+                <Upload className="w-4 h-4 mr-2" /> Upload Another
               </Button>
             </div>
           </motion.div>
