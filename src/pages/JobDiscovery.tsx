@@ -164,6 +164,8 @@ const JobDiscovery = () => {
 
   const allJobs = jobs.length > 0 ? jobs : savedJobs;
   const displayJobs = allJobs.filter((job) => {
+    // Filter out low-quality aggregator pages (very low score with no matched skills)
+    if ((job.match_score ?? 0) < 15 && (!job.matched_skills || job.matched_skills.length === 0)) return false;
     // Score filter
     if (filter === "high" && (job.match_score ?? 0) < 80) return false;
     if (filter === "medium" && ((job.match_score ?? 0) < 60 || (job.match_score ?? 0) >= 80)) return false;
