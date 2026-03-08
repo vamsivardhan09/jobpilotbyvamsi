@@ -42,6 +42,7 @@ export const Navbar = () => {
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => handleAnchorClick(e, link.href)}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {link.label}
