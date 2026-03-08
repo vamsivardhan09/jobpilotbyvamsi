@@ -391,7 +391,7 @@ const StandaloneOptimizer = () => {
                   <FileText className="w-4 h-4 mr-2" /> Preview & Download
                 </Button>
               )}
-              <Button variant="hero-outline" className="flex-1" onClick={() => { setResult(null); setAtsScore(null); setJobDescription(""); }}>
+              <Button variant="hero-outline" className="flex-1" onClick={() => { setResult(null); setAtsScore(null); setOriginalScore(null); setOptimizedScore(null); setJobDescription(""); }}>
                 <Sparkles className="w-4 h-4 mr-2" /> Optimize Another
               </Button>
               <Button variant="hero-outline" className="flex-1" onClick={() => navigate("/dashboard")}>
