@@ -2,13 +2,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import {
   Briefcase, ArrowLeft, Search, Target, MapPin, DollarSign,
   CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter, FileText,
+  ChevronDown, AlertTriangle, Lightbulb, Globe,
 } from "lucide-react";
 
 type JobMatch = {
@@ -24,6 +25,7 @@ type JobMatch = {
   missing_skills: string[];
   apply_url?: string;
   status?: string;
+  source?: string;
 };
 
 const JobDiscovery = () => {
@@ -37,6 +39,10 @@ const JobDiscovery = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobMatch | null>(null);
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "stretch">("all");
+  const [visibleCount, setVisibleCount] = useState(15);
+  const [totalResults, setTotalResults] = useState(0);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [progressText, setProgressText] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -63,13 +69,20 @@ const JobDiscovery = () => {
     setLoading(true);
     setJobs([]);
     setSelectedJob(null);
+    setSuggestions([]);
+    setVisibleCount(15);
+    setProgressText("Searching job boards across India and globally...");
 
     try {
+      setTimeout(() => setProgressText("Analyzing job listings with AI..."), 3000);
+      setTimeout(() => setProgressText("Scoring matches against your skills..."), 6000);
+
       const { data, error } = await supabase.functions.invoke("discover-jobs", {
         body: {
           skills: skills.map((s) => ({ name: s.name, category: s.category, proficiency: s.proficiency })),
           experienceLevel: profile?.experience_level,
           preferredRoles: profile?.preferred_roles,
+          location: profile?.preferred_locations?.[0] || "India",
         },
       });
 
@@ -77,6 +90,18 @@ const JobDiscovery = () => {
       if (!data?.success) throw new Error(data?.error || "Discovery failed");
 
       const discovered: JobMatch[] = data.data;
+      setTotalResults(data.total || discovered.length);
+
+      if (data.suggestions?.length) {
+        setSuggestions(data.suggestions);
+      }
+
+      if (discovered.length === 0) {
+        toast({ title: "No matches found", description: "Try updating your resume with more relevant skills.", variant: "default" });
+        setLoading(false);
+        return;
+      }
+
       setJobs(discovered);
 
       // Save to database
@@ -108,21 +133,36 @@ const JobDiscovery = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
+      setProgressText("");
     }
   };
 
-  const displayJobs = (jobs.length > 0 ? jobs : savedJobs).filter((job) => {
+  const allJobs = jobs.length > 0 ? jobs : savedJobs;
+  const displayJobs = allJobs.filter((job) => {
     if (filter === "high") return (job.match_score ?? 0) >= 80;
     if (filter === "medium") return (job.match_score ?? 0) >= 60 && (job.match_score ?? 0) < 80;
     if (filter === "stretch") return (job.match_score ?? 0) < 60;
     return true;
   });
 
+  const visibleJobs = displayJobs.slice(0, visibleCount);
+  const hasMore = visibleCount < displayJobs.length;
+
   const scoreColor = (score: number) =>
     score >= 80 ? "text-success" : score >= 60 ? "text-warning" : "text-destructive";
 
   const scoreBg = (score: number) =>
     score >= 80 ? "bg-success/10 border-success/20" : score >= 60 ? "bg-warning/10 border-warning/20" : "bg-destructive/10 border-destructive/20";
+
+  const sourceIcon = (source?: string) => {
+    if (!source) return null;
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+        <Globe className="w-2.5 h-2.5" />
+        {source}
+      </span>
+    );
+  };
 
   if (initialLoading) {
     return (
@@ -153,7 +193,7 @@ const JobDiscovery = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-2xl font-bold mb-2">Job Discovery</h1>
           <p className="text-sm text-muted-foreground">
-            AI-powered job matching based on your {skills.length} extracted skills.
+            AI-powered job matching across LinkedIn, Indeed, Naukri & more — prioritizing India.
           </p>
         </motion.div>
 
@@ -185,11 +225,34 @@ const JobDiscovery = () => {
             {loading && (
               <div className="mt-4">
                 <Progress value={undefined} className="h-1" />
-                <p className="text-xs text-muted-foreground mt-2">AI is analyzing your profile and finding matching positions...</p>
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-2">
+                  <Search className="w-3 h-3 animate-pulse" />
+                  {progressText}
+                </p>
               </div>
             )}
           </div>
         </motion.div>
+
+        {/* Suggestions when no results */}
+        {suggestions.length > 0 && displayJobs.length === 0 && !loading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-6 mb-8 border-warning/20">
+            <div className="flex items-start gap-3">
+              <Lightbulb className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Suggestions to improve results</h3>
+                <ul className="space-y-1">
+                  {suggestions.map((s, i) => (
+                    <li key={i} className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-warning shrink-0" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Filters */}
         {displayJobs.length > 0 && (
@@ -198,14 +261,14 @@ const JobDiscovery = () => {
             {(["all", "high", "medium", "stretch"] as const).map((f) => (
               <button
                 key={f}
-                onClick={() => setFilter(f)}
+                onClick={() => { setFilter(f); setVisibleCount(15); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
                   filter === f
                     ? "bg-primary/10 text-primary border-primary/30"
-                    : "bg-surface-2 text-muted-foreground border-border/50 hover:border-primary/20"
+                    : "bg-secondary text-muted-foreground border-border/50 hover:border-primary/20"
                 }`}
               >
-                {f === "all" ? "All" : f === "high" ? "High Match (80+)" : f === "medium" ? "Medium (60-79)" : "Stretch (<60)"}
+                {f === "all" ? `All (${allJobs.length})` : f === "high" ? "High Match (80+)" : f === "medium" ? "Medium (60-79)" : "Stretch (<60)"}
               </button>
             ))}
           </motion.div>
@@ -216,7 +279,7 @@ const JobDiscovery = () => {
           {/* Job list */}
           <div className={`space-y-3 ${selectedJob ? "lg:col-span-2" : "lg:col-span-5"}`}>
             <AnimatePresence>
-              {displayJobs.length === 0 && !loading ? (
+              {visibleJobs.length === 0 && !loading ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-10 text-center">
                   <Target className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground mb-1">
@@ -227,35 +290,36 @@ const JobDiscovery = () => {
                   </p>
                 </motion.div>
               ) : (
-                displayJobs.map((job, i) => (
+                visibleJobs.map((job, i) => (
                   <motion.div
                     key={job.id || i}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
                     onClick={() => setSelectedJob(job)}
-                    className={`glass rounded-xl p-4 cursor-pointer transition-all hover:border-primary/30 ${
+                    className={`glass rounded-xl p-4 cursor-pointer transition-all group hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 ${
                       selectedJob?.id === job.id ? "border-primary/50 ring-1 ring-primary/20" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate">{job.title}</p>
+                        <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{job.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{job.company}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                           {job.location && (
                             <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
                           )}
                           {job.salary_range && (
                             <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{job.salary_range}</span>
                           )}
+                          {sourceIcon((job as any).source)}
                         </div>
                       </div>
                       <div className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold border ${scoreBg(job.match_score)}`}>
                         <span className={scoreColor(job.match_score)}>{job.match_score}%</span>
                       </div>
                     </div>
-                    {/* Skill pills - compact */}
+                    {/* Skill pills */}
                     <div className="flex flex-wrap gap-1 mt-3">
                       {job.matched_skills?.slice(0, 4).map((s, j) => (
                         <span key={j} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-success/10 text-success border border-success/20">
@@ -268,10 +332,38 @@ const JobDiscovery = () => {
                         </span>
                       )}
                     </div>
+                    {/* Apply button inline for quick access */}
+                    {job.apply_url && (
+                      <div className="mt-3 pt-3 border-t border-border/30">
+                        <a
+                          href={job.apply_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Apply Now
+                        </a>
+                      </div>
+                    )}
                   </motion.div>
                 ))
               )}
             </AnimatePresence>
+
+            {/* Load More */}
+            {hasMore && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setVisibleCount((prev) => prev + 15)}
+                >
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  Load More ({displayJobs.length - visibleCount} remaining)
+                </Button>
+              </motion.div>
+            )}
           </div>
 
           {/* Detail panel */}
@@ -298,6 +390,7 @@ const JobDiscovery = () => {
                 {selectedJob.salary_range && (
                   <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" />{selectedJob.salary_range}</span>
                 )}
+                {sourceIcon((selectedJob as any).source)}
               </div>
 
               <p className="text-sm text-muted-foreground leading-relaxed mb-6">{selectedJob.description}</p>
@@ -336,7 +429,7 @@ const JobDiscovery = () => {
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">All Required Skills</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedJob.required_skills.map((s, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-full text-xs font-medium bg-surface-2 text-muted-foreground border border-border/50">
+                      <span key={i} className="px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-muted-foreground border border-border/50">
                         {s}
                       </span>
                     ))}
@@ -344,19 +437,27 @@ const JobDiscovery = () => {
                 </div>
               )}
 
+              {/* URL validation warning */}
+              {!selectedJob.apply_url && (
+                <div className="flex items-center gap-2 text-xs text-warning mb-4 p-3 rounded-lg bg-warning/5 border border-warning/10">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>No application link available for this position.</span>
+                </div>
+              )}
+
               <div className="flex gap-3">
-                {selectedJob.id && (
+                {selectedJob.apply_url && (
                   <Button variant="hero" className="flex-1" asChild>
+                    <a href={selectedJob.apply_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" /> Apply Now
+                    </a>
+                  </Button>
+                )}
+                {selectedJob.id && (
+                  <Button variant="hero-outline" className="flex-1" asChild>
                     <Link to={`/optimize?job=${selectedJob.id}`}>
                       <FileText className="w-4 h-4 mr-2" /> Optimize Resume
                     </Link>
-                  </Button>
-                )}
-                {selectedJob.apply_url && (
-                  <Button variant="hero-outline" className="flex-1" asChild>
-                    <a href={selectedJob.apply_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-2" /> Apply
-                    </a>
                   </Button>
                 )}
               </div>
