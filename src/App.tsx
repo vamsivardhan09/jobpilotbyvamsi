@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ResumeUpload from "./pages/ResumeUpload";
 import JobDiscovery from "./pages/JobDiscovery";
+import ResumeOptimizer from "./pages/ResumeOptimizer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
