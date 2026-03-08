@@ -47,6 +47,9 @@ const App = () => (
             <Route path="/ats-optimizer" element={<ProtectedWithSidebar><StandaloneOptimizer /></ProtectedWithSidebar>} />
             <Route path="/resume-preview" element={<ProtectedWithSidebar><ResumePreview /></ProtectedWithSidebar>} />
             <Route path="/profile" element={<ProtectedWithSidebar><Profile /></ProtectedWithSidebar>} />
+            <Route path="/interview" element={<ProtectedWithSidebar><InterviewPractice /></ProtectedWithSidebar>} />
+            <Route path="/interview/:sessionId" element={<ProtectedRoute><VoiceInterview /></ProtectedRoute>} />
+            <Route path="/interview-report/:sessionId" element={<ProtectedWithSidebar><InterviewReport /></ProtectedWithSidebar>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

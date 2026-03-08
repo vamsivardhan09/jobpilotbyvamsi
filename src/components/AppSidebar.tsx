@@ -1,7 +1,7 @@
 import logoImg from "@/assets/jobpilot-logo.png";
 import {
   LayoutDashboard, Upload, Target, Sparkles, User, FileText,
-  LogOut,
+  LogOut, Mic,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate, Link } from "react-router-dom";
