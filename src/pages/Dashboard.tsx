@@ -1,3 +1,4 @@
+import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -68,10 +69,8 @@ const Dashboard = () => {
       <nav className="border-b border-border/30 glass sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between h-14 px-4">
           <Link to="/" className="flex items-center gap-2 font-bold">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Briefcase className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
-            JobMind
+            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain" />
+            JobPilot
           </Link>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" asChild>

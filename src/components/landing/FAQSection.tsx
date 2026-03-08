@@ -8,7 +8,7 @@ import {
 
 const faqs = [
   {
-    q: "How does JobMind find jobs?",
+    q: "How does JobPilot find jobs?",
     a: "Our AI engine dynamically generates search queries based on your resume skills and experience. It scans job boards, company career pages, and aggregators across the internet to find relevant opportunities.",
   },
   {

@@ -5,7 +5,7 @@ const testimonials = [
   {
     name: "Sarah Chen",
     role: "Software Engineer at Google",
-    content: "JobMind found me 3 roles I never would have discovered. The resume optimizer helped me tailor my application perfectly — got an interview within a week.",
+    content: "JobPilot found me 3 roles I never would have discovered. The resume optimizer helped me tailor my application perfectly — got an interview within a week.",
     avatar: "SC",
   },
   {
@@ -17,7 +17,7 @@ const testimonials = [
   {
     name: "Priya Sharma",
     role: "Data Scientist at Meta",
-    content: "I was spending hours on job boards every day. JobMind automated the entire process and matched me with higher quality opportunities.",
+    content: "I was spending hours on job boards every day. JobPilot automated the entire process and matched me with higher quality opportunities.",
     avatar: "PS",
   },
 ];

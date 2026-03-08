@@ -1,3 +1,4 @@
+import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
@@ -114,10 +115,8 @@ const ResumePreview = () => {
             <ArrowLeft className="w-4 h-4" /> Dashboard
           </Link>
           <Link to="/" className="flex items-center gap-2 font-bold">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Briefcase className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
-            JobMind
+            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain" />
+            JobPilot
           </Link>
         </div>
       </nav>
