@@ -16,6 +16,9 @@ import ResumeOptimizer from "./pages/ResumeOptimizer";
 import StandaloneOptimizer from "./pages/StandaloneOptimizer";
 import ResumePreview from "./pages/ResumePreview";
 import Profile from "./pages/Profile";
+import InterviewPractice from "./pages/InterviewPractice";
+import VoiceInterview from "./pages/VoiceInterview";
+import InterviewReport from "./pages/InterviewReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
