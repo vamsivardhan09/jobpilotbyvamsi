@@ -86,9 +86,10 @@ const JobDiscovery = () => {
       const { data, error } = await supabase.functions.invoke("discover-jobs", {
         body: {
           skills: skills.map((s) => ({ name: s.name, category: s.category, proficiency: s.proficiency })),
-          experienceLevel: profile?.experience_level,
+          experienceLevel: experienceFilter !== "all" ? experienceFilter : (profile?.experience_level || ""),
           preferredRoles: profile?.preferred_roles,
           location: locationFilter !== "all" ? locationFilter : (profile?.preferred_locations?.[0] || "India"),
+          workType: workTypeFilter !== "all" ? workTypeFilter : "",
         },
       });
 
