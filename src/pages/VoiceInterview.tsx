@@ -87,7 +87,7 @@ export default function VoiceInterview() {
           interviewType: session?.interview_type,
           jobRole: session?.job_role,
           conversationHistory: history,
-          resumeContext: session?.resume_context,
+          resumeContext: resumeContext,
         },
       });
 
