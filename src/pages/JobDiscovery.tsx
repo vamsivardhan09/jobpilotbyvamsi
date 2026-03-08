@@ -138,11 +138,33 @@ const JobDiscovery = () => {
     }
   };
 
+  const locationOptions = [
+    { value: "all", label: "All Locations" },
+    { value: "India", label: "India" },
+    { value: "Remote", label: "Remote" },
+    { value: "USA", label: "USA" },
+    { value: "Bengaluru", label: "Bengaluru" },
+    { value: "Hyderabad", label: "Hyderabad" },
+    { value: "Mumbai", label: "Mumbai" },
+    { value: "Delhi", label: "Delhi / NCR" },
+    { value: "Pune", label: "Pune" },
+    { value: "Chennai", label: "Chennai" },
+  ];
+
   const allJobs = jobs.length > 0 ? jobs : savedJobs;
   const displayJobs = allJobs.filter((job) => {
-    if (filter === "high") return (job.match_score ?? 0) >= 80;
-    if (filter === "medium") return (job.match_score ?? 0) >= 60 && (job.match_score ?? 0) < 80;
-    if (filter === "stretch") return (job.match_score ?? 0) < 60;
+    // Score filter
+    if (filter === "high" && (job.match_score ?? 0) < 80) return false;
+    if (filter === "medium" && ((job.match_score ?? 0) < 60 || (job.match_score ?? 0) >= 80)) return false;
+    if (filter === "stretch" && (job.match_score ?? 0) >= 60) return false;
+    // Location filter
+    if (locationFilter !== "all") {
+      const loc = (job.location || "").toLowerCase();
+      const title = (job.title || "").toLowerCase();
+      const desc = (job.description || "").toLowerCase();
+      const term = locationFilter.toLowerCase();
+      if (!loc.includes(term) && !title.includes(term) && !desc.includes(term)) return false;
+    }
     return true;
   });
 
