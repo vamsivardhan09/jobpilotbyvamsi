@@ -46,9 +46,7 @@ const Login = () => {
           className="w-full max-w-sm"
         >
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4">
-              <Briefcase className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img src={logoImg} alt="JobPilot" className="w-12 h-12 object-contain mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
             <p className="text-sm text-muted-foreground">Sign in to your JobPilot account</p>
           </div>

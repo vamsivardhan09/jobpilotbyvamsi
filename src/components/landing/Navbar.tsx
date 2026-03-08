@@ -32,9 +32,7 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 font-bold text-lg tracking-tight">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Briefcase className="w-4 h-4 text-primary-foreground" />
-          </div>
+          <img src={logoImg} alt="JobPilot" className="w-8 h-8 object-contain" />
           <span>JobPilot</span>
         </Link>
 

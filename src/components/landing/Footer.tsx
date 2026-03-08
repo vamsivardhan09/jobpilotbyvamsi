@@ -7,9 +7,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Briefcase className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
+            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain" />
             JobPilot
           </Link>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">

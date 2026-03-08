@@ -1,3 +1,4 @@
+import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback } from "react";
