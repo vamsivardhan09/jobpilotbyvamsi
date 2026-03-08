@@ -24,6 +24,8 @@ const StandaloneOptimizer = () => {
   const [resumeLoaded, setResumeLoaded] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [atsScore, setAtsScore] = useState<number | null>(null);
+  const [originalScore, setOriginalScore] = useState<number | null>(null);
+  const [optimizedScore, setOptimizedScore] = useState<number | null>(null);
 
   // Load user's primary resume on mount
   useState(() => {
@@ -68,8 +70,10 @@ const StandaloneOptimizer = () => {
 
       setResult(data.data);
 
-      // Use AI's real score instead of fake calculation
-      setAtsScore(Math.round(data.data.ats_match_score || 0));
+      // Use AI's real scores
+      setOriginalScore(Math.round(data.data.original_ats_score || 0));
+      setOptimizedScore(Math.round(data.data.optimized_ats_score || 0));
+      setAtsScore(Math.round(data.data.original_ats_score || 0));
 
       // Save to optimized_resumes
       const { data: insertedRow } = await supabase.from("optimized_resumes").insert({
@@ -201,17 +205,60 @@ const StandaloneOptimizer = () => {
               </div>
             )}
 
-            {/* ATS Score */}
-            {atsScore !== null && (
-              <div className="glass rounded-xl p-6 text-center">
-                <BarChart3 className="w-8 h-8 text-primary mx-auto mb-3" />
-                <h2 className="text-lg font-bold mb-2">ATS Compatibility Score</h2>
-                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-3xl font-black border-2 ${scoreColor(atsScore)}`}>
-                  {atsScore}%
+            {/* ATS Scores — Original vs Optimized */}
+            {originalScore !== null && optimizedScore !== null && (
+              <div className="glass rounded-xl p-6">
+                <BarChart3 className="w-8 h-8 text-primary mx-auto mb-4" />
+                <h2 className="text-lg font-bold mb-5 text-center">ATS Score Comparison</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                  {/* Current Resume */}
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-medium">Your Current Resume</p>
+                    <div className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-3xl font-black border-2 ${scoreColor(originalScore)}`}>
+                      {originalScore}%
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">Before optimization</p>
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="flex justify-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <ArrowUpRight className="w-8 h-8 text-success" />
+                      <span className="text-success font-bold text-sm">+{optimizedScore - originalScore} pts</span>
+                    </div>
+                  </div>
+
+                  {/* Optimized Resume */}
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-medium">Optimized Resume</p>
+                    <div className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-3xl font-black border-2 ${scoreColor(optimizedScore)}`}>
+                      {optimizedScore}%
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">After optimization</p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  Estimated improvement: <span className="text-success font-bold">+{result.match_improvement} points</span>
-                </p>
+
+                {/* Score bar visualization */}
+                <div className="mt-6 space-y-3">
+                  <div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>Current</span>
+                      <span>{originalScore}%</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-surface-2 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-1000 ${originalScore >= 60 ? 'bg-success' : originalScore >= 40 ? 'bg-warning' : 'bg-destructive'}`} style={{ width: `${originalScore}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>Optimized</span>
+                      <span>{optimizedScore}%</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-surface-2 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-1000 ${optimizedScore >= 60 ? 'bg-success' : optimizedScore >= 40 ? 'bg-warning' : 'bg-destructive'}`} style={{ width: `${optimizedScore}%` }} />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -344,7 +391,7 @@ const StandaloneOptimizer = () => {
                   <FileText className="w-4 h-4 mr-2" /> Preview & Download
                 </Button>
               )}
-              <Button variant="hero-outline" className="flex-1" onClick={() => { setResult(null); setAtsScore(null); setJobDescription(""); }}>
+              <Button variant="hero-outline" className="flex-1" onClick={() => { setResult(null); setAtsScore(null); setOriginalScore(null); setOptimizedScore(null); setJobDescription(""); }}>
                 <Sparkles className="w-4 h-4 mr-2" /> Optimize Another
               </Button>
               <Button variant="hero-outline" className="flex-1" onClick={() => navigate("/dashboard")}>
