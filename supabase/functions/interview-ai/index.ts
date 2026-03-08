@@ -18,28 +18,37 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (action === "generate_question") {
-      systemPrompt = `You are an expert ${interviewType} interviewer for the role of ${jobRole}. 
-You conduct realistic, professional interviews. Ask one question at a time.
-Be conversational but professional. Adapt your questions based on previous answers.
-${resumeContext ? `The candidate's resume context: ${resumeContext}` : ""}
+      systemPrompt = `You are an expert AI interviewer conducting a comprehensive mock interview. You have thoroughly reviewed the candidate's resume and must ask questions directly related to their specific skills, projects, experience, and education.
 
-IMPORTANT: Only output the interview question. No preamble, no labels, just the question itself.
-If this is the first question, start with a warm greeting and then ask your first question.`;
+Your interview style:
+- Be warm, professional, and conversational — like a real senior interviewer
+- Ask ONE question at a time
+- Reference specific items from the resume (project names, technologies, companies)
+- Mix question types: behavioral, technical, project deep-dives, problem-solving, and system design
+- Adapt follow-up questions based on the candidate's previous answers
+- Challenge the candidate with progressively harder questions
+- Ask about real-world scenarios related to their tech stack
 
-      userPrompt = conversationHistory?.length 
-        ? `Previous conversation:\n${conversationHistory.map((m: any) => `${m.role}: ${m.content}`).join("\n")}\n\nAsk the next interview question. Just the question, nothing else.`
-        : "Start the interview with a greeting and your first question.";
+${resumeContext ? `CANDIDATE'S RESUME:\n${resumeContext}` : ""}
+
+IMPORTANT: Output ONLY the interview question or greeting. No labels, no preamble, just speak naturally as an interviewer would.
+If this is the first question, greet the candidate BY NAME (extract from resume) and reference something specific from their resume before asking your first question.`;
+
+      userPrompt = conversationHistory?.length
+        ? `Previous conversation:\n${conversationHistory.map((m: any) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`).join("\n")}\n\nAsk the next interview question. Reference something specific from the resume or build on their previous answer. Just the question, nothing else.`
+        : "Start the interview. Greet the candidate by name, mention something specific from their resume, then ask your first question.";
 
     } else if (action === "evaluate_answer") {
       systemPrompt = `You are an expert interview evaluator. Evaluate the candidate's answer strictly but fairly.
-You MUST respond using the tool provided.`;
+You MUST respond using the tool provided.
+${resumeContext ? `Resume context: ${resumeContext}` : ""}`;
 
       userPrompt = `Interview type: ${interviewType}
 Job role: ${jobRole}
 Question: ${conversationHistory[conversationHistory.length - 2]?.content}
 Answer: ${conversationHistory[conversationHistory.length - 1]?.content}
 
-Evaluate this answer.`;
+Evaluate this answer. Generate a follow-up question that digs deeper into the topic or pivots to another resume item.`;
 
     } else if (action === "generate_report") {
       systemPrompt = `You are an interview performance analyst. Generate a comprehensive interview report.
@@ -74,7 +83,7 @@ Generate a detailed performance report.`;
               strengths: { type: "array", items: { type: "string" } },
               improvements: { type: "array", items: { type: "string" } },
               suggested_answer: { type: "string" },
-              follow_up_question: { type: "string", description: "Next interview question to ask" },
+              follow_up_question: { type: "string", description: "Next interview question based on resume and conversation" },
             },
             required: ["score", "strengths", "improvements", "suggested_answer", "follow_up_question"],
             additionalProperties: false,
@@ -145,7 +154,6 @@ Generate a detailed performance report.`;
       });
     }
 
-    // For evaluate and report, parse tool call
     const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall) {
       const parsed = typeof toolCall.function.arguments === "string"
@@ -156,7 +164,6 @@ Generate a detailed performance report.`;
       });
     }
 
-    // Fallback: try parsing content
     const content = result.choices?.[0]?.message?.content || "";
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {

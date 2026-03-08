@@ -24,7 +24,7 @@ const navItems = [
   { title: "Upload Resume", url: "/upload", icon: Upload },
   { title: "Discover Jobs", url: "/jobs", icon: Target },
   { title: "ATS Optimizer", url: "/ats-optimizer", icon: Sparkles },
-  { title: "Interview Practice", url: "/interview", icon: Mic },
+  { title: "Mock Interview", url: "/interview", icon: Mic },
   { title: "Profile", url: "/profile", icon: User },
 ];
 
