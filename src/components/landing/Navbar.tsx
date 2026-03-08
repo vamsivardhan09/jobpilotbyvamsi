@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -13,6 +13,19 @@ const navLinks = [
 
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleAnchorClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const hash = href; // e.g. "#features"
+    if (location.pathname !== "/") {
+      navigate("/" + hash);
+    } else {
+      const el = document.querySelector(hash);
+      el?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
@@ -29,6 +42,7 @@ export const Navbar = () => {
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => handleAnchorClick(e, link.href)}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {link.label}
@@ -67,7 +81,7 @@ export const Navbar = () => {
                   key={link.label}
                   href={link.href}
                   className="text-sm text-muted-foreground hover:text-foreground py-2"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => { handleAnchorClick(e, link.href); setMobileOpen(false); }}
                 >
                   {link.label}
                 </a>
