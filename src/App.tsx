@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import DashboardLayout from "@/components/DashboardLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -19,6 +20,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const ProtectedWithSidebar = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <DashboardLayout>{children}</DashboardLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -30,13 +37,13 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/upload" element={<ProtectedRoute><ResumeUpload /></ProtectedRoute>} />
-            <Route path="/jobs" element={<ProtectedRoute><JobDiscovery /></ProtectedRoute>} />
-            <Route path="/optimize" element={<ProtectedRoute><ResumeOptimizer /></ProtectedRoute>} />
-            <Route path="/ats-optimizer" element={<ProtectedRoute><StandaloneOptimizer /></ProtectedRoute>} />
-            <Route path="/resume-preview" element={<ProtectedRoute><ResumePreview /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedWithSidebar><Dashboard /></ProtectedWithSidebar>} />
+            <Route path="/upload" element={<ProtectedWithSidebar><ResumeUpload /></ProtectedWithSidebar>} />
+            <Route path="/jobs" element={<ProtectedWithSidebar><JobDiscovery /></ProtectedWithSidebar>} />
+            <Route path="/optimize" element={<ProtectedWithSidebar><ResumeOptimizer /></ProtectedWithSidebar>} />
+            <Route path="/ats-optimizer" element={<ProtectedWithSidebar><StandaloneOptimizer /></ProtectedWithSidebar>} />
+            <Route path="/resume-preview" element={<ProtectedWithSidebar><ResumePreview /></ProtectedWithSidebar>} />
+            <Route path="/profile" element={<ProtectedWithSidebar><Profile /></ProtectedWithSidebar>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
