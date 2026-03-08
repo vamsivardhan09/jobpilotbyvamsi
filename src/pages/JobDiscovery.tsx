@@ -194,21 +194,59 @@ const JobDiscovery = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [progressText, setProgressText] = useState("");
 
+  // Load data + restore saved filter preferences
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [skillsRes, profileRes, matchesRes] = await Promise.all([
+      const [skillsRes, profileRes, matchesRes, prefsRes] = await Promise.all([
         supabase.from("skills").select("*").eq("user_id", user.id),
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }),
+        supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
       ]);
       setSkills(skillsRes.data ?? []);
       setProfile(profileRes.data);
       setSavedJobs(matchesRes.data ?? []);
+
+      // Restore filters from profile & preferences
+      if (profileRes.data?.experience_level) {
+        setExperienceFilter(profileRes.data.experience_level);
+      }
+      if (prefsRes.data?.remote_preference && prefsRes.data.remote_preference !== "any") {
+        setWorkTypeFilter(prefsRes.data.remote_preference);
+      }
+
       setInitialLoading(false);
     };
     load();
   }, [user]);
+
+  // Persist filter changes to DB
+  const saveFilterPreferences = async (experience: string, workType: string) => {
+    if (!user) return;
+    // Save experience level to profiles
+    if (experience !== "all") {
+      await supabase.from("profiles").update({ experience_level: experience }).eq("user_id", user.id);
+    }
+    // Save work type to user_preferences (upsert)
+    const prefValue = workType === "all" ? "any" : workType;
+    const { data: existing } = await supabase.from("user_preferences").select("id").eq("user_id", user.id).single();
+    if (existing) {
+      await supabase.from("user_preferences").update({ remote_preference: prefValue }).eq("user_id", user.id);
+    } else {
+      await supabase.from("user_preferences").insert({ user_id: user.id, remote_preference: prefValue });
+    }
+  };
+
+  const handleExperienceChange = (val: string) => {
+    setExperienceFilter(val);
+    saveFilterPreferences(val, workTypeFilter);
+  };
+
+  const handleWorkTypeChange = (val: string) => {
+    setWorkTypeFilter(val);
+    saveFilterPreferences(experienceFilter, val);
+  };
 
   const discoverJobs = async () => {
     if (!user || skills.length === 0) {
@@ -500,7 +538,7 @@ const JobDiscovery = () => {
               <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
               <select
                 value={experienceFilter}
-                onChange={(e) => { setExperienceFilter(e.target.value); setVisibleCount(15); }}
+                onChange={(e) => { handleExperienceChange(e.target.value); setVisibleCount(15); }}
                 className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
               >
@@ -515,7 +553,7 @@ const JobDiscovery = () => {
               <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
               <select
                 value={workTypeFilter}
-                onChange={(e) => { setWorkTypeFilter(e.target.value); setVisibleCount(15); }}
+                onChange={(e) => { handleWorkTypeChange(e.target.value); setVisibleCount(15); }}
                 className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
               >
