@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [resumeCount, setResumeCount] = useState(0);
