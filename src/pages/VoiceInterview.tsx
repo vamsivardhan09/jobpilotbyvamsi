@@ -27,7 +27,6 @@ export default function VoiceInterview() {
   const { user } = useAuth();
   const { toast } = useToast();
   const resumeContext = (location.state as any)?.resumeContext || "";
-  const { toast } = useToast();
 
   const [session, setSession] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
