@@ -2,13 +2,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import {
   Briefcase, ArrowLeft, Search, Target, MapPin, DollarSign,
-  CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter,
+  CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter, FileText,
 } from "lucide-react";
 
 type JobMatch = {
@@ -344,13 +344,22 @@ const JobDiscovery = () => {
                 </div>
               )}
 
-              {selectedJob.apply_url && (
-                <Button variant="hero" className="w-full" asChild>
-                  <a href={selectedJob.apply_url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="w-4 h-4 mr-2" /> Apply Now
-                  </a>
-                </Button>
-              )}
+              <div className="flex gap-3">
+                {selectedJob.id && (
+                  <Button variant="hero" className="flex-1" asChild>
+                    <Link to={`/optimize?job=${selectedJob.id}`}>
+                      <FileText className="w-4 h-4 mr-2" /> Optimize Resume
+                    </Link>
+                  </Button>
+                )}
+                {selectedJob.apply_url && (
+                  <Button variant="hero-outline" className="flex-1" asChild>
+                    <a href={selectedJob.apply_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" /> Apply
+                    </a>
+                  </Button>
+                )}
+              </div>
             </motion.div>
           )}
         </div>
