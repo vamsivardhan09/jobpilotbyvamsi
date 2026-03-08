@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import {
   Briefcase, ArrowLeft, Search, Target, MapPin, DollarSign,
-  CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter,
+  CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter, FileText,
 } from "lucide-react";
 
 type JobMatch = {
