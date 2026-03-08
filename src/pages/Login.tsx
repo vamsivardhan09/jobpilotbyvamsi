@@ -1,13 +1,62 @@
 import { Navbar } from "@/components/landing/Navbar";
-import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Briefcase } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setOtpSent(true);
+      toast({ title: "Code sent!", description: "Check your email for the login code." });
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (otp.length !== 6) return;
+    setLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otp,
+      type: "email",
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Invalid code", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Welcome back!", description: "You're now signed in." });
+      navigate("/dashboard");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -26,16 +75,59 @@ const Login = () => {
           </div>
 
           <div className="glass rounded-xl p-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" />
-            </div>
-            <Button variant="hero" className="w-full">
-              Send Login Code
-            </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              We'll send a one-time code to your email.
-            </p>
+            {!otpSent ? (
+              <form onSubmit={handleSendOTP} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button variant="hero" className="w-full" disabled={loading} type="submit">
+                  {loading ? "Sending..." : "Send Login Code"}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  We'll send a one-time code to your email.
+                </p>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-center text-muted-foreground">
+                  Enter the 6-digit code sent to <span className="text-foreground font-medium">{email}</span>
+                </p>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <Button
+                  variant="hero"
+                  className="w-full"
+                  disabled={loading || otp.length !== 6}
+                  onClick={handleVerifyOTP}
+                >
+                  {loading ? "Verifying..." : "Verify & Sign In"}
+                </Button>
+                <button
+                  onClick={() => { setOtpSent(false); setOtp(""); }}
+                  className="text-xs text-primary hover:underline block mx-auto"
+                >
+                  Use a different email
+                </button>
+              </div>
+            )}
           </div>
 
           <p className="text-sm text-center text-muted-foreground mt-6">
