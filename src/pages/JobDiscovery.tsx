@@ -83,7 +83,7 @@ const JobDiscovery = () => {
           skills: skills.map((s) => ({ name: s.name, category: s.category, proficiency: s.proficiency })),
           experienceLevel: profile?.experience_level,
           preferredRoles: profile?.preferred_roles,
-          location: profile?.preferred_locations?.[0] || "India",
+          location: locationFilter !== "all" ? locationFilter : (profile?.preferred_locations?.[0] || "India"),
         },
       });
 
