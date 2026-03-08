@@ -5,6 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Clamp a score to 0-10 range
+function clampScore(val: any, fallback = 5): number {
+  const n = typeof val === "number" ? val : parseFloat(val);
+  if (isNaN(n)) return fallback;
+  // If AI returned a 0-100 scale, normalize to 0-10
+  if (n > 10) return Math.min(10, Math.round(n / 10));
+  return Math.max(0, Math.min(10, Math.round(n * 10) / 10));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -42,6 +51,7 @@ CRITICAL: Output ONLY spoken words. No markdown, no asterisks, no labels, no bul
     } else if (action === "evaluate_answer") {
       systemPrompt = `You are an expert interview evaluator. Evaluate the candidate's answer strictly but fairly.
 You MUST respond using the tool provided.
+IMPORTANT: All scores must be on a 0-10 scale. Never exceed 10.
 ${resumeContext ? `Resume context: ${resumeContext}` : ""}`;
 
       userPrompt = `Interview type: ${interviewType}
@@ -49,18 +59,19 @@ Job role: ${jobRole}
 Question: ${conversationHistory[conversationHistory.length - 2]?.content}
 Answer: ${conversationHistory[conversationHistory.length - 1]?.content}
 
-Evaluate this answer. Generate a follow-up question that digs deeper into the topic or pivots to another resume item.`;
+Evaluate this answer. Score on a scale of 0-10 (never exceed 10). Generate a follow-up question that digs deeper into the topic or pivots to another resume item.`;
 
     } else if (action === "generate_report") {
       systemPrompt = `You are an interview performance analyst. Generate a comprehensive interview report.
-You MUST respond using the tool provided.`;
+You MUST respond using the tool provided.
+CRITICAL: All scores MUST be on a 0-10 scale. Never output scores above 10. Use decimals like 7.5 if needed.`;
 
       userPrompt = `Interview type: ${interviewType}
 Job role: ${jobRole}
 Full conversation:
 ${conversationHistory.map((m: any) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`).join("\n")}
 
-Generate a detailed performance report.`;
+Generate a detailed performance report. All scores must be 0-10. Do not exceed 10 for any score.`;
     }
 
     const body: any = {
@@ -80,7 +91,7 @@ Generate a detailed performance report.`;
           parameters: {
             type: "object",
             properties: {
-              score: { type: "number", description: "Score out of 10" },
+              score: { type: "number", description: "Score from 0 to 10. Must not exceed 10." },
               strengths: { type: "array", items: { type: "string" } },
               improvements: { type: "array", items: { type: "string" } },
               suggested_answer: { type: "string" },
@@ -99,15 +110,15 @@ Generate a detailed performance report.`;
         type: "function",
         function: {
           name: "return_report",
-          description: "Return structured interview performance report",
+          description: "Return structured interview performance report. All scores 0-10.",
           parameters: {
             type: "object",
             properties: {
-              total_score: { type: "number" },
-              communication_score: { type: "number" },
-              technical_score: { type: "number" },
-              confidence_score: { type: "number" },
-              problem_solving_score: { type: "number" },
+              total_score: { type: "number", description: "0-10" },
+              communication_score: { type: "number", description: "0-10" },
+              technical_score: { type: "number", description: "0-10" },
+              confidence_score: { type: "number", description: "0-10" },
+              problem_solving_score: { type: "number", description: "0-10" },
               strengths: { type: "array", items: { type: "string" } },
               improvements: { type: "array", items: { type: "string" } },
               recommended_topics: { type: "array", items: { type: "string" } },
@@ -160,6 +171,19 @@ Generate a detailed performance report.`;
       const parsed = typeof toolCall.function.arguments === "string"
         ? JSON.parse(toolCall.function.arguments)
         : toolCall.function.arguments;
+
+      // Normalize scores to 0-10 range
+      if (action === "evaluate_answer" && parsed.score !== undefined) {
+        parsed.score = clampScore(parsed.score);
+      }
+      if (action === "generate_report") {
+        parsed.total_score = clampScore(parsed.total_score);
+        parsed.communication_score = clampScore(parsed.communication_score);
+        parsed.technical_score = clampScore(parsed.technical_score);
+        parsed.confidence_score = clampScore(parsed.confidence_score);
+        parsed.problem_solving_score = clampScore(parsed.problem_solving_score);
+      }
+
       return new Response(JSON.stringify({ success: true, data: parsed }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -168,7 +192,15 @@ Generate a detailed performance report.`;
     const content = result.choices?.[0]?.message?.content || "";
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return new Response(JSON.stringify({ success: true, data: JSON.parse(jsonMatch[0]) }), {
+      const parsed = JSON.parse(jsonMatch[0]);
+      // Also normalize if found in raw content
+      if (parsed.total_score !== undefined) parsed.total_score = clampScore(parsed.total_score);
+      if (parsed.communication_score !== undefined) parsed.communication_score = clampScore(parsed.communication_score);
+      if (parsed.technical_score !== undefined) parsed.technical_score = clampScore(parsed.technical_score);
+      if (parsed.confidence_score !== undefined) parsed.confidence_score = clampScore(parsed.confidence_score);
+      if (parsed.problem_solving_score !== undefined) parsed.problem_solving_score = clampScore(parsed.problem_solving_score);
+      if (parsed.score !== undefined) parsed.score = clampScore(parsed.score);
+      return new Response(JSON.stringify({ success: true, data: parsed }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

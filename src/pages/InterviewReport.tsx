@@ -64,14 +64,18 @@ export default function InterviewReport() {
           </div>
 
           {/* Scores */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
-            {scores.map((s) => (
-              <Card key={s.label} className="p-4 text-center border-border/30">
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value ?? "—"}<span className="text-xs text-muted-foreground">/10</span></p>
-                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-                {s.value && <Progress value={(s.value / 10) * 100} className="mt-2 h-1.5" />}
-              </Card>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 mb-8">
+            {scores.map((s) => {
+              // Normalize score display: clamp to 0-10
+              const displayVal = s.value != null ? Math.max(0, Math.min(10, Math.round(s.value * 10) / 10)) : null;
+              return (
+                <Card key={s.label} className="p-3 sm:p-4 text-center border-border/30">
+                  <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{displayVal ?? "—"}<span className="text-xs text-muted-foreground">/10</span></p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{s.label}</p>
+                  {displayVal != null && <Progress value={(displayVal / 10) * 100} className="mt-2 h-1.5" />}
+                </Card>
+              );
+            })}
           </div>
 
           {/* Strengths & Improvements */}

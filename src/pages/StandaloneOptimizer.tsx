@@ -34,12 +34,12 @@ const StandaloneOptimizer = () => {
       .from("resumes")
       .select("*")
       .eq("user_id", user.id)
-      .eq("is_primary", true)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single()
       .then(({ data }) => {
-        setResume(data);
+        if (data && data.length > 0) {
+          setResume(data[0]);
+        }
         setResumeLoaded(true);
       });
   });
