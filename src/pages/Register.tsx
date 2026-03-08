@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logoImg from "@/assets/jobpilot-logo.png";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, CheckCircle } from "lucide-react";
+import { Mail, CheckCircle, ShieldCheck } from "lucide-react";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -17,7 +17,11 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [resending, setResending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +33,6 @@ const Register = () => {
       password,
       options: {
         data: { full_name: name.trim() },
-        emailRedirectTo: window.location.origin,
       },
     });
 
@@ -39,6 +42,61 @@ const Register = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       setEmailSent(true);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const newOtp = [...otp];
+    for (let i = 0; i < 6; i++) {
+      newOtp[i] = pasted[i] || "";
+    }
+    setOtp(newOtp);
+    const nextEmpty = newOtp.findIndex((v) => !v);
+    inputRefs.current[nextEmpty === -1 ? 5 : nextEmpty]?.focus();
+  };
+
+  const handleVerifyOtp = async () => {
+    const token = otp.join("");
+    if (token.length !== 6) {
+      toast({ title: "Error", description: "Please enter the full 6-digit code.", variant: "destructive" });
+      return;
+    }
+    setVerifying(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token,
+      type: "signup",
+    });
+
+    setVerifying(false);
+
+    if (error) {
+      toast({ title: "Invalid code", description: error.message, variant: "destructive" });
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    } else {
+      toast({ title: "Verified!", description: "Your account is now active." });
+      navigate("/dashboard");
     }
   };
 
@@ -52,7 +110,7 @@ const Register = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Email sent!", description: "Check your inbox for the verification link." });
+      toast({ title: "Code resent!", description: "Check your inbox for a new verification code." });
     }
   };
 
@@ -68,31 +126,51 @@ const Register = () => {
           >
             <div className="mb-6">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-primary" />
+                <ShieldCheck className="w-8 h-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">Check your email</h1>
+              <h1 className="text-2xl font-bold mb-2">Enter verification code</h1>
               <p className="text-sm text-muted-foreground">
-                We've sent a verification link to{" "}
-                <span className="font-medium text-foreground">{email}</span>.
-                Click the link to activate your account.
+                We've sent a 6-digit code to{" "}
+                <span className="font-medium text-foreground">{email}</span>
               </p>
             </div>
 
-            <div className="glass rounded-xl p-6 space-y-4">
-              <div className="flex items-start gap-3 text-left">
-                <CheckCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Open the email and click the verification link to complete signup.
-                </p>
+            <div className="glass rounded-xl p-6 space-y-6">
+              <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { inputRefs.current[i] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    className="w-11 h-13 text-center text-xl font-bold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                  />
+                ))}
               </div>
+
               <Button
-                variant="outline"
+                variant="hero"
                 className="w-full"
-                onClick={handleResend}
-                disabled={resending}
+                onClick={handleVerifyOtp}
+                disabled={verifying || otp.join("").length !== 6}
               >
-                {resending ? "Sending..." : "Resend verification email"}
+                {verifying ? "Verifying..." : "Verify & Continue"}
               </Button>
+
+              <div className="flex items-center gap-2 justify-center">
+                <p className="text-sm text-muted-foreground">Didn't receive the code?</p>
+                <button
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="text-sm text-primary hover:underline font-medium disabled:opacity-50"
+                >
+                  {resending ? "Sending..." : "Resend"}
+                </button>
+              </div>
             </div>
 
             <p className="text-sm text-center text-muted-foreground mt-6">
