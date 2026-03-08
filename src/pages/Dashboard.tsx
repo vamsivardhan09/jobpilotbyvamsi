@@ -119,8 +119,8 @@ const Dashboard = () => {
                 </Link>
               </Button>
               <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/matches">
-                  <Target className="w-4 h-4 mr-2" /> View Job Matches
+                <Link to="/jobs">
+                  <Target className="w-4 h-4 mr-2" /> Discover Jobs
                 </Link>
               </Button>
               <Button variant="hero-outline" className="w-full justify-start" asChild>
@@ -141,7 +141,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold">Top Job Matches</h2>
               {topMatches.length > 0 && (
-                <Link to="/matches" className="text-xs text-primary hover:underline flex items-center gap-1">
+                <Link to="/jobs" className="text-xs text-primary hover:underline flex items-center gap-1">
                   View all <ChevronRight className="w-3 h-3" />
                 </Link>
               )}
