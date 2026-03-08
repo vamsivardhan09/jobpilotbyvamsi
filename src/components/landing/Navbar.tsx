@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoImg from "@/assets/jobpilot-logo.png";
 
 const navLinks = [
   { label: "Features", href: "#features" },
