@@ -63,15 +63,21 @@ const ResumeOptimizer = () => {
       setResult(data.data);
 
       // Save to optimized_resumes
-      await supabase.from("optimized_resumes").insert({
+      const { data: insertedRow } = await supabase.from("optimized_resumes").insert({
         user_id: user.id,
         job_match_id: jobMatch.id,
         original_resume_id: resume.id,
         optimized_content: data.data,
         ats_keywords: data.data.ats_keywords || [],
-      });
+      }).select("id").single();
 
       toast({ title: "Resume optimized!", description: "Your tailored resume is ready." });
+
+      // Navigate to preview page
+      if (insertedRow?.id) {
+        navigate(`/resume-preview?id=${insertedRow.id}`);
+        return;
+      }
     } catch (err: any) {
       console.error("Optimize error:", err);
       toast({ title: "Error", description: err.message, variant: "destructive" });
