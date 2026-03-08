@@ -75,7 +75,7 @@ const Dashboard = () => {
           </Link>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/settings"><Settings className="w-4 h-4" /></Link>
+              <Link to="/profile"><Settings className="w-4 h-4" /></Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-4" />
