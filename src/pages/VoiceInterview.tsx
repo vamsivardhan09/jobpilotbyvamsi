@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Mic, MicOff, Volume2, VolumeX, Loader2,
-  PhoneOff, Bot, User
+  PhoneOff, Bot, User, AlertCircle
 } from "lucide-react";
 import VoiceWaveform from "@/components/interview/VoiceWaveform";
 import AIAvatar from "@/components/interview/AIAvatar";
