@@ -24,6 +24,8 @@ const StandaloneOptimizer = () => {
   const [resumeLoaded, setResumeLoaded] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [atsScore, setAtsScore] = useState<number | null>(null);
+  const [originalScore, setOriginalScore] = useState<number | null>(null);
+  const [optimizedScore, setOptimizedScore] = useState<number | null>(null);
 
   // Load user's primary resume on mount
   useState(() => {
