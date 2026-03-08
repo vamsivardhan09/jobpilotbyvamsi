@@ -1,4 +1,3 @@
-import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -6,8 +5,8 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Briefcase, Upload, BarChart3, Target, LogOut, User,
-  FileText, TrendingUp, AlertTriangle, ChevronRight, Settings, Download, Sparkles
+  Briefcase, BarChart3, Target,
+  FileText, TrendingUp, AlertTriangle, ChevronRight, Download, Sparkles
 } from "lucide-react";
 
 const Dashboard = () => {
