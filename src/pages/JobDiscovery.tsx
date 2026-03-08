@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Briefcase, ArrowLeft, Search, Target, MapPin, DollarSign,
   CheckCircle2, XCircle, Loader2, Sparkles, ExternalLink, Filter, FileText,
-  ChevronDown, AlertTriangle, Lightbulb, Globe,
+  ChevronDown, AlertTriangle, Lightbulb, Globe, Copy, ClipboardCheck,
 } from "lucide-react";
 
 type JobMatch = {
