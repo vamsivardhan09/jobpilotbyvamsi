@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Mic, History, TrendingUp, ChevronRight, Code, Users, Brain, Server,
-  Briefcase, Database, Layout, BarChart3, Cpu, Wrench
+  Mic, History, ChevronRight, Code, Users, Brain, Server,
+  Database, Layout, BarChart3, Cpu, Wrench, FileText, CheckCircle2, Loader2
 } from "lucide-react";
 import InterviewHistory from "@/components/interview/InterviewHistory";
 
@@ -31,13 +31,43 @@ const jobRoles = [
 export default function InterviewPractice() {
   const [selectedType, setSelectedType] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
-  const [step, setStep] = useState<"type" | "role" | "history">("type");
+  const [step, setStep] = useState<"resume" | "type" | "role" | "history">("resume");
+  const [resume, setResume] = useState<any>(null);
+  const [loadingResume, setLoadingResume] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Check if user has a resume
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("resumes").select("id, file_name, parsed_data, raw_text")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setResume(data[0]);
+          setStep("type");
+        }
+        setLoadingResume(false);
+      });
+  }, [user]);
+
   const handleStart = async () => {
     if (!user) return;
+
+    // Build resume context from parsed data
+    let resumeContext = "";
+    if (resume?.parsed_data) {
+      const pd = resume.parsed_data as any;
+      const skills = pd.skills?.map((s: any) => typeof s === "string" ? s : s.name).join(", ");
+      const experience = pd.experience?.map((e: any) => `${e.title} at ${e.company}`).join("; ");
+      resumeContext = `Skills: ${skills || "N/A"}. Experience: ${experience || "N/A"}.`;
+    } else if (resume?.raw_text) {
+      resumeContext = resume.raw_text.substring(0, 500);
+    }
+
     const { data, error } = await supabase.from("interview_sessions").insert({
       user_id: user.id,
       interview_type: selectedType,
@@ -49,8 +79,16 @@ export default function InterviewPractice() {
       toast({ title: "Error", description: "Failed to start interview", variant: "destructive" });
       return;
     }
-    navigate(`/interview/${data.id}`);
+    navigate(`/interview/${data.id}`, { state: { resumeContext } });
   };
+
+  if (loadingResume) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,7 +104,7 @@ export default function InterviewPractice() {
             <Button
               variant={step === "history" ? "default" : "hero-outline"}
               size="sm"
-              onClick={() => setStep(step === "history" ? "type" : "history")}
+              onClick={() => setStep(step === "history" ? (resume ? "type" : "resume") : "history")}
             >
               <History className="w-4 h-4 mr-1" />
               {step === "history" ? "New Interview" : "History"}
@@ -76,8 +114,32 @@ export default function InterviewPractice() {
 
         {step === "history" ? (
           <InterviewHistory />
+        ) : step === "resume" ? (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Card className="p-8 text-center border-border/30">
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h2 className="font-semibold text-lg mb-2">Upload Your Resume First</h2>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                Upload and analyze your resume so the AI interviewer can ask personalized questions based on your skills and experience.
+              </p>
+              <Button variant="hero" onClick={() => navigate("/upload")}>
+                <FileText className="w-4 h-4 mr-2" /> Upload Resume
+              </Button>
+            </Card>
+          </motion.div>
         ) : step === "type" ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            {resume && (
+              <Card className="p-4 mb-6 border-primary/20 bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">Resume: {resume.file_name}</p>
+                    <p className="text-xs text-muted-foreground">AI will use this to personalize questions</p>
+                  </div>
+                </div>
+              </Card>
+            )}
             <h2 className="font-semibold mb-4 text-lg">Select Interview Type</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {interviewTypes.map((t) => (
@@ -124,7 +186,7 @@ export default function InterviewPractice() {
             <div className="flex justify-between mt-6">
               <Button variant="outline" onClick={() => setStep("type")}>Back</Button>
               <Button disabled={!selectedRole} onClick={handleStart} variant="hero">
-                <Mic className="w-4 h-4 mr-1" /> Start Interview
+                <Mic className="w-4 h-4 mr-1" /> Start Live Voice Interview
               </Button>
             </div>
           </motion.div>
