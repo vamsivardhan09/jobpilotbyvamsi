@@ -119,8 +119,10 @@ const Dashboard = () => {
                 </Link>
               </Button>
               <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/matches">
-                  <Target className="w-4 h-4 mr-2" /> View Job Matches
+                <Link to="/jobs">
+                  <Target className="w-4 h-4 mr-2" /> Discover Jobs
+                </Link>
+              </Button>
                 </Link>
               </Button>
               <Button variant="hero-outline" className="w-full justify-start" asChild>
