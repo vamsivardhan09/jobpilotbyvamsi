@@ -123,8 +123,6 @@ const Dashboard = () => {
                   <Target className="w-4 h-4 mr-2" /> Discover Jobs
                 </Link>
               </Button>
-                </Link>
-              </Button>
               <Button variant="hero-outline" className="w-full justify-start" asChild>
                 <Link to="/profile">
                   <User className="w-4 h-4 mr-2" /> Edit Profile
