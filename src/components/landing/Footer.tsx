@@ -1,5 +1,5 @@
-import { Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
+import logoImg from "@/assets/jobpilot-logo.png";
 
 export const Footer = () => {
   return (
