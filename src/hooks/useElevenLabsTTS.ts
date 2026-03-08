@@ -2,8 +2,8 @@ import { useState, useRef, useCallback } from "react";
 
 const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 
-// Track if ElevenLabs has failed so we skip it on subsequent calls
-let elevenLabsFailed = false;
+// ElevenLabs free tier is blocked — skip API calls entirely and use browser TTS
+let elevenLabsFailed = true;
 
 export function useElevenLabsTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
