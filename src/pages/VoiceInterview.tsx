@@ -246,7 +246,10 @@ export default function VoiceInterview() {
     }
     lastTranscriptRef.current = "";
 
-    const userMsg: Message = { role: "user", content: answerText };
+    // Apply AI transcript correction
+    const correctedText = await correctTranscript(answerText);
+
+    const userMsg: Message = { role: "user", content: correctedText };
     const currentMessages = messagesRef.current;
     const newHistory = [...currentMessages, userMsg];
     setMessages(newHistory);
