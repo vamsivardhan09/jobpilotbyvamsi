@@ -8,7 +8,6 @@ export function useElevenLabsTTS() {
   const abortRef = useRef<AbortController | null>(null);
 
   const speak = useCallback(async (text: string) => {
-    // Stop any currently playing audio
     stop();
 
     const controller = new AbortController();
@@ -42,10 +41,22 @@ export function useElevenLabsTTS() {
 
       await audio.play();
     } catch (e: any) {
-      if (e.name !== "AbortError") {
-        console.error("TTS error:", e);
+      if (e.name === "AbortError") return;
+      console.warn("ElevenLabs TTS failed, falling back to browser TTS:", e.message);
+      // Fallback to browser SpeechSynthesis
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v => v.name.includes("Google") && v.lang.startsWith("en"))
+          || voices.find(v => v.lang.startsWith("en-"));
+        if (preferred) utterance.voice = preferred;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } catch {
         setIsSpeaking(false);
-        throw e;
       }
     }
   }, []);
