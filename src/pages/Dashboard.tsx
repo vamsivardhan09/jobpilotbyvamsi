@@ -86,28 +86,9 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick actions */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-6">
-            <h2 className="font-semibold mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <Button variant="hero" className="w-full justify-start" asChild>
-                <Link to="/upload"><Upload className="w-4 h-4 mr-2" /> Upload Resume</Link>
-              </Button>
-              <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/jobs"><Target className="w-4 h-4 mr-2" /> Discover Jobs</Link>
-              </Button>
-              <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/ats-optimizer"><Sparkles className="w-4 h-4 mr-2" /> Resume Optimization</Link>
-              </Button>
-              <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/profile"><User className="w-4 h-4 mr-2" /> Edit Profile</Link>
-              </Button>
-            </div>
-          </motion.div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top matches */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass rounded-xl p-6 lg:col-span-2">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold">Top Job Matches</h2>
               {topMatches.length > 0 && (
