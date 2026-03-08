@@ -81,7 +81,7 @@ export const Navbar = () => {
                   key={link.label}
                   href={link.href}
                   className="text-sm text-muted-foreground hover:text-foreground py-2"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => { handleAnchorClick(e, link.href); setMobileOpen(false); }}
                 >
                   {link.label}
                 </a>
