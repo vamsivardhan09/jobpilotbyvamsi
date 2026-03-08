@@ -33,24 +33,25 @@ serve(async (req) => {
 
     const skillNames = skills.map((s: any) => typeof s === "string" ? s : s.name);
 
-    // Build search query from preferred roles and skills
+    // Build search query - use first preferred role or top skills
     const roleQuery = preferredRoles?.length
-      ? preferredRoles.slice(0, 2).join(" OR ")
-      : skillNames.slice(0, 3).join(" ");
+      ? preferredRoles[0]
+      : skillNames.slice(0, 2).join(" ");
 
-    const locationQuery = location || "United States";
+    const locationQuery = location || "";
+
+    // Build the full query
+    const fullQuery = locationQuery
+      ? `${roleQuery} in ${locationQuery}`
+      : roleQuery;
 
     // Fetch real jobs from JSearch API
     const searchParams = new URLSearchParams({
-      query: roleQuery,
+      query: fullQuery,
       page: "1",
-      num_pages: "1",
-      date_posted: "month",
+      num_pages: "2",
+      date_posted: "all",
     });
-
-    if (location) {
-      searchParams.set("query", `${roleQuery} in ${locationQuery}`);
-    }
 
     console.log("Searching JSearch for:", searchParams.get("query"));
 
