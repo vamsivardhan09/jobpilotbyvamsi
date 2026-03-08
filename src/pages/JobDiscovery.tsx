@@ -39,6 +39,7 @@ const JobDiscovery = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobMatch | null>(null);
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "stretch">("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
   const [visibleCount, setVisibleCount] = useState(15);
   const [totalResults, setTotalResults] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
