@@ -51,6 +51,7 @@ export default function VoiceInterview() {
   const transcript = useElevenLabs ? elevenSTT.transcript : browserSTT.transcript;
   const isSpeaking = useElevenLabs ? elevenTTS.isSpeaking : browserTTS.isSpeaking;
   const isConnecting = useElevenLabs ? elevenSTT.isConnecting : false;
+  const sttError = useElevenLabs ? elevenSTT.error : browserSTT.error;
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const maxQuestions = 10;
