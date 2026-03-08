@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import ResumeUpload from "./pages/ResumeUpload";
 import JobDiscovery from "./pages/JobDiscovery";
 import ResumeOptimizer from "./pages/ResumeOptimizer";
+import StandaloneOptimizer from "./pages/StandaloneOptimizer";
 import ResumePreview from "./pages/ResumePreview";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/upload" element={<ProtectedRoute><ResumeUpload /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><JobDiscovery /></ProtectedRoute>} />
             <Route path="/optimize" element={<ProtectedRoute><ResumeOptimizer /></ProtectedRoute>} />
+            <Route path="/ats-optimizer" element={<ProtectedRoute><StandaloneOptimizer /></ProtectedRoute>} />
             <Route path="/resume-preview" element={<ProtectedRoute><ResumePreview /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
