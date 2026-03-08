@@ -1,12 +1,11 @@
 import { ResumeTemplateProps } from "./types";
 
 /**
- * "Original Enhanced" template — preserves the user's original resume layout
- * but highlights injected ATS keywords with a subtle accent.
+ * "Original Enhanced" template — preserves a clean, traditional resume layout.
+ * ATS keywords are naturally woven into Skills and Experience sections
+ * rather than shown in a separate highlighted block.
  */
 const OriginalEnhancedTemplate = ({ data }: ResumeTemplateProps) => {
-  const addedKeywords = data.atsKeywords || [];
-
   return (
     <div
       style={{
@@ -23,23 +22,24 @@ const OriginalEnhancedTemplate = ({ data }: ResumeTemplateProps) => {
     >
       {/* Header — classic centered */}
       <div style={{ textAlign: "center", marginBottom: "16px", borderBottom: "2px solid #222", paddingBottom: "12px" }}>
-        <h1 style={{ fontSize: "20pt", fontWeight: 700, margin: 0, letterSpacing: "1px" }}>
+        <h1 style={{ fontSize: "20pt", fontWeight: 700, margin: 0, letterSpacing: "1px", textTransform: "uppercase" }}>
           {data.fullName}
         </h1>
-        <div style={{ fontSize: "9pt", color: "#555", marginTop: "4px", display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+        <div style={{ fontSize: "9.5pt", color: "#333", marginTop: "6px", display: "flex", justifyContent: "center", gap: "8px", flexWrap: "wrap" }}>
           {data.email && <span>{data.email}</span>}
-          {data.phone && <span>| {data.phone}</span>}
-          {data.location && <span>| {data.location}</span>}
-          {data.linkedin && <span>| {data.linkedin}</span>}
+          {data.email && data.phone && <span>|</span>}
+          {data.phone && <span>{data.phone}</span>}
+          {data.phone && data.location && <span>|</span>}
+          {data.location && <span>{data.location}</span>}
+          {data.location && data.linkedin && <span>|</span>}
+          {data.linkedin && <span>{data.linkedin}</span>}
         </div>
       </div>
 
       {/* Summary */}
       {data.summary && (
         <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "11pt", fontWeight: 700, textTransform: "uppercase", borderBottom: "1px solid #999", marginBottom: "4px", paddingBottom: "2px" }}>
-            Professional Summary
-          </h2>
+          <h2 style={sectionHeadingStyle}>Professional Summary</h2>
           <p style={{ margin: 0, textAlign: "justify" }}>{data.summary}</p>
         </div>
       )}
@@ -47,19 +47,17 @@ const OriginalEnhancedTemplate = ({ data }: ResumeTemplateProps) => {
       {/* Experience */}
       {data.experience?.length > 0 && (
         <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "11pt", fontWeight: 700, textTransform: "uppercase", borderBottom: "1px solid #999", marginBottom: "6px", paddingBottom: "2px" }}>
-            Experience
-          </h2>
+          <h2 style={sectionHeadingStyle}>Professional Experience</h2>
           {data.experience.map((exp, i) => (
-            <div key={i} style={{ marginBottom: "10px" }}>
+            <div key={i} style={{ marginBottom: "12px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <strong>{exp.title}</strong>
-                {exp.duration && <span style={{ fontSize: "9pt", color: "#555" }}>{exp.duration}</span>}
+                <strong style={{ fontSize: "11.5pt" }}>{exp.title}</strong>
+                {exp.duration && <span style={{ fontSize: "9.5pt", color: "#333", fontStyle: "italic" }}>{exp.duration}</span>}
               </div>
-              <div style={{ fontStyle: "italic", fontSize: "10pt", color: "#444" }}>{exp.company}</div>
-              <ul style={{ margin: "4px 0 0 16px", padding: 0 }}>
+              <div style={{ fontStyle: "italic", fontSize: "10pt", color: "#444", marginBottom: "4px" }}>{exp.company}</div>
+              <ul style={{ margin: "2px 0 0 18px", padding: 0, listStyleType: "disc" }}>
                 {exp.bullets.map((b, j) => (
-                  <li key={j} style={{ marginBottom: "2px" }}>{b}</li>
+                  <li key={j} style={{ marginBottom: "2px", textAlign: "justify" }}>{b}</li>
                 ))}
               </ul>
             </div>
@@ -70,30 +68,35 @@ const OriginalEnhancedTemplate = ({ data }: ResumeTemplateProps) => {
       {/* Skills */}
       {data.skills?.length > 0 && (
         <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "11pt", fontWeight: 700, textTransform: "uppercase", borderBottom: "1px solid #999", marginBottom: "6px", paddingBottom: "2px" }}>
-            Skills
-          </h2>
-          {data.skills.map((cat, i) => (
-            <div key={i} style={{ marginBottom: "4px" }}>
-              <strong>{cat.category}: </strong>
-              <span>{cat.skills.join(", ")}</span>
-            </div>
-          ))}
+          <h2 style={sectionHeadingStyle}>Technical Skills</h2>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <tbody>
+              {data.skills.map((cat, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: 700, fontSize: "10pt", padding: "3px 12px 3px 0", verticalAlign: "top", whiteSpace: "nowrap", width: "1%" }}>
+                    {cat.category}:
+                  </td>
+                  <td style={{ fontSize: "10.5pt", padding: "3px 0", verticalAlign: "top" }}>
+                    {cat.skills.join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {/* Education */}
       {data.education && data.education.length > 0 && (
         <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "11pt", fontWeight: 700, textTransform: "uppercase", borderBottom: "1px solid #999", marginBottom: "6px", paddingBottom: "2px" }}>
-            Education
-          </h2>
+          <h2 style={sectionHeadingStyle}>Education</h2>
           {data.education.map((edu, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
               <div>
-                <strong>{edu.degree}</strong> — {edu.institution}
+                <strong>{edu.degree}</strong>
+                <span style={{ color: "#333" }}> — {edu.institution}</span>
               </div>
-              {edu.year && <span style={{ fontSize: "9pt", color: "#555" }}>{edu.year}</span>}
+              {edu.year && <span style={{ fontSize: "9.5pt", color: "#333", fontStyle: "italic" }}>{edu.year}</span>}
             </div>
           ))}
         </div>
@@ -102,52 +105,32 @@ const OriginalEnhancedTemplate = ({ data }: ResumeTemplateProps) => {
       {/* Projects */}
       {data.projects && data.projects.length > 0 && (
         <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "11pt", fontWeight: 700, textTransform: "uppercase", borderBottom: "1px solid #999", marginBottom: "6px", paddingBottom: "2px" }}>
-            Projects
-          </h2>
+          <h2 style={sectionHeadingStyle}>Projects</h2>
           {data.projects.map((proj, i) => (
-            <div key={i} style={{ marginBottom: "6px" }}>
+            <div key={i} style={{ marginBottom: "8px" }}>
               <strong>{proj.name}</strong>
-              <p style={{ margin: "2px 0" }}>{proj.description}</p>
-              {proj.technologies && (
-                <span style={{ fontSize: "9pt", color: "#555" }}>Technologies: {proj.technologies.join(", ")}</span>
+              <p style={{ margin: "2px 0", textAlign: "justify" }}>{proj.description}</p>
+              {proj.technologies && proj.technologies.length > 0 && (
+                <div style={{ fontSize: "9.5pt", color: "#333", fontStyle: "italic" }}>
+                  Technologies: {proj.technologies.join(", ")}
+                </div>
               )}
             </div>
           ))}
         </div>
       )}
-
-      {/* ATS Keywords — highlighted section */}
-      {addedKeywords.length > 0 && (
-        <div style={{ marginTop: "16px", padding: "12px", border: "1px dashed #0066cc", borderRadius: "4px", background: "#f0f6ff" }}>
-          <h2 style={{ fontSize: "10pt", fontWeight: 700, color: "#0066cc", margin: "0 0 6px 0", textTransform: "uppercase" }}>
-            ✦ ATS Keywords Added
-          </h2>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {addedKeywords.map((kw, i) => (
-              <span
-                key={i}
-                style={{
-                  padding: "2px 8px",
-                  borderRadius: "3px",
-                  fontSize: "9pt",
-                  fontWeight: 600,
-                  background: "#dbeafe",
-                  color: "#1e40af",
-                  border: "1px solid #93c5fd",
-                }}
-              >
-                {kw}
-              </span>
-            ))}
-          </div>
-          <p style={{ fontSize: "8pt", color: "#666", marginTop: "6px", marginBottom: 0 }}>
-            These keywords were added to improve ATS compatibility. They are woven into the content above.
-          </p>
-        </div>
-      )}
     </div>
   );
+};
+
+const sectionHeadingStyle: React.CSSProperties = {
+  fontSize: "11.5pt",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  borderBottom: "1px solid #333",
+  marginBottom: "6px",
+  paddingBottom: "2px",
+  letterSpacing: "0.5px",
 };
 
 export default OriginalEnhancedTemplate;
