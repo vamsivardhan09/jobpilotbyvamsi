@@ -62,6 +62,27 @@ export default function VoiceInterview() {
   const questionCountRef = useRef(0);
   const aiSpeakingRef = useRef(false);
   const interviewStartedRef = useRef(false);
+  const correctionCacheRef = useRef<Map<string, string>>(new Map());
+
+  // AI transcript correction
+  const correctTranscript = useCallback(async (text: string): Promise<string> => {
+    if (!text || text.trim().length < 5) return text;
+    
+    // Check cache
+    const cached = correctionCacheRef.current.get(text.trim());
+    if (cached) return cached;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("correct-transcript", {
+        body: { transcript: text },
+      });
+      if (error || !data?.corrected) return text;
+      correctionCacheRef.current.set(text.trim(), data.corrected);
+      return data.corrected;
+    } catch {
+      return text; // Fallback to original on any error
+    }
+  }, []);
 
   // Keep refs in sync
   useEffect(() => { messagesRef.current = messages; }, [messages]);
