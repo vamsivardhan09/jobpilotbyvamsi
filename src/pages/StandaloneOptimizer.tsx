@@ -68,11 +68,8 @@ const StandaloneOptimizer = () => {
 
       setResult(data.data);
 
-      // Calculate ATS score from keywords and improvements
-      const keywordCount = data.data.ats_keywords?.length || 0;
-      const improvementBoost = data.data.match_improvement || 0;
-      const baseScore = Math.min(95, 60 + keywordCount * 1.5 + improvementBoost);
-      setAtsScore(Math.round(baseScore));
+      // Use AI's real score instead of fake calculation
+      setAtsScore(Math.round(data.data.ats_match_score || 0));
 
       // Save to optimized_resumes
       const { data: insertedRow } = await supabase.from("optimized_resumes").insert({
