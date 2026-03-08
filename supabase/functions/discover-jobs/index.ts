@@ -9,26 +9,27 @@ const corsHeaders = {
 // Build multiple search queries for comprehensive coverage
 function buildSearchQueries(skillNames: string[], preferredRoles: string[], location: string): string[] {
   const queries: string[] = [];
+  const loc = location || "India";
 
-  // Role-based queries (India-first)
+  // Role-based queries — target specific job postings, not search pages
   if (preferredRoles?.length) {
     for (const role of preferredRoles.slice(0, 2)) {
-      queries.push(`${role} jobs ${location || "India"} apply 2026`);
-      queries.push(`${role} jobs remote hiring 2026`);
+      queries.push(`"${role}" hiring ${loc} site:linkedin.com/jobs/view`);
+      queries.push(`"${role}" apply now ${loc} 2026`);
     }
   }
 
-  // Skill-based queries
+  // Skill-based queries targeting actual postings
   const topSkills = skillNames.slice(0, 3);
   if (topSkills.length > 0) {
-    queries.push(`${topSkills.join(" ")} developer jobs ${location || "India"} apply`);
-    queries.push(`${topSkills[0]} ${topSkills[1] || ""} fresher jobs hiring India`);
-    queries.push(`${topSkills.join(" ")} jobs remote apply`);
+    queries.push(`${topSkills.join(" ")} developer opening ${loc} apply`);
+    queries.push(`${topSkills[0]} ${topSkills[1] || ""} hiring ${loc} site:lever.co OR site:greenhouse.io OR site:linkedin.com/jobs/view`);
+    queries.push(`${topSkills.join(" ")} engineer position remote apply now`);
   }
 
   // Location-specific if provided
   if (location && location.toLowerCase() !== "india") {
-    queries.push(`${preferredRoles?.[0] || topSkills[0]} jobs ${location} apply`);
+    queries.push(`${preferredRoles?.[0] || topSkills[0]} opening ${location} apply`);
   }
 
   return queries.slice(0, 5);
