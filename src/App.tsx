@@ -13,6 +13,7 @@ import ResumeUpload from "./pages/ResumeUpload";
 import JobDiscovery from "./pages/JobDiscovery";
 import ResumeOptimizer from "./pages/ResumeOptimizer";
 import ResumePreview from "./pages/ResumePreview";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/jobs" element={<ProtectedRoute><JobDiscovery /></ProtectedRoute>} />
             <Route path="/optimize" element={<ProtectedRoute><ResumeOptimizer /></ProtectedRoute>} />
             <Route path="/resume-preview" element={<ProtectedRoute><ResumePreview /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
