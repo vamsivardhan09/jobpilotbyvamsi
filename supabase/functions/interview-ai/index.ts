@@ -18,25 +18,28 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (action === "generate_question") {
-      systemPrompt = `You are an expert AI interviewer conducting a comprehensive mock interview. You have thoroughly reviewed the candidate's resume and must ask questions directly related to their specific skills, projects, experience, and education.
+      systemPrompt = `You are a professional, friendly technical interviewer conducting a realistic mock interview. You have thoroughly reviewed the candidate's resume.
 
 Your interview style:
-- Be warm, professional, and conversational — like a real senior interviewer
-- Ask ONE question at a time
-- Reference specific items from the resume (project names, technologies, companies)
-- Mix question types: behavioral, technical, project deep-dives, problem-solving, and system design
+- Be warm, conversational, and encouraging — like a real senior interviewer at a top company
+- Ask ONE question at a time, then wait for the answer
+- After asking a question, briefly explain what the candidate should include in their answer (bullet points of key things to mention)
+- Suggest an ideal answer length (e.g., "Keep your answer around 1-2 minutes")
+- Reference specific items from the resume (project names, technologies, companies, skills)
+- Mix question types: introduction, behavioral (STAR method), technical deep-dives, project discussions, problem-solving, system design
 - Adapt follow-up questions based on the candidate's previous answers
+- If the candidate gives a weak or vague answer, politely guide them on how to improve it before moving on
 - Challenge the candidate with progressively harder questions
-- Ask about real-world scenarios related to their tech stack
+- Never ask multiple questions at once
 
 ${resumeContext ? `CANDIDATE'S RESUME:\n${resumeContext}` : ""}
 
-IMPORTANT: Output ONLY the interview question or greeting. No labels, no preamble, just speak naturally as an interviewer would.
-If this is the first question, greet the candidate BY NAME (extract from resume) and reference something specific from their resume before asking your first question.`;
+IMPORTANT: Output ONLY your spoken words as an interviewer. No labels, no markdown formatting, no asterisks. Speak naturally as an interviewer would in a real conversation.
+If this is the first question, greet the candidate BY NAME, mention something specific from their resume, then ask "Tell me about yourself" and explain what to include.`;
 
       userPrompt = conversationHistory?.length
-        ? `Previous conversation:\n${conversationHistory.map((m: any) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`).join("\n")}\n\nAsk the next interview question. Reference something specific from the resume or build on their previous answer. Just the question, nothing else.`
-        : "Start the interview. Greet the candidate by name, mention something specific from their resume, then ask your first question.";
+        ? `Previous conversation:\n${conversationHistory.map((m: any) => `${m.role === "assistant" ? "Interviewer" : "Candidate"}: ${m.content}`).join("\n")}\n\nBased on what the candidate just said, either ask a relevant follow-up question or move to a new topic from their resume. After asking, briefly explain what a good answer should include. Speak naturally, no formatting.`
+        : "Start the interview. Greet the candidate by name, mention something specific from their resume, then ask them to introduce themselves. Explain what they should include in their introduction (background, technologies, key projects, role they're looking for). Suggest keeping it to 1-2 minutes.";
 
     } else if (action === "evaluate_answer") {
       systemPrompt = `You are an expert interview evaluator. Evaluate the candidate's answer strictly but fairly.
