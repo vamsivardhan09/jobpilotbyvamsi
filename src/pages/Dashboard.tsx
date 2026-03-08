@@ -1,4 +1,3 @@
-import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -6,12 +5,12 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Briefcase, Upload, BarChart3, Target, LogOut, User,
-  FileText, TrendingUp, AlertTriangle, ChevronRight, Settings, Download, Sparkles
+  Briefcase, BarChart3, Target,
+  FileText, TrendingUp, AlertTriangle, ChevronRight, Download, Sparkles
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [resumeCount, setResumeCount] = useState(0);
@@ -58,31 +57,8 @@ const Dashboard = () => {
     fetchData();
   }, [user]);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Top nav */}
-      <nav className="border-b border-border/30 glass sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between h-14 px-4">
-          <Link to="/" className="flex items-center gap-2 font-bold">
-            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain" />
-            JobPilot
-          </Link>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/profile"><Settings className="w-4 h-4" /></Link>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-4 py-8">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -110,28 +86,9 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick actions */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-6">
-            <h2 className="font-semibold mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <Button variant="hero" className="w-full justify-start" asChild>
-                <Link to="/upload"><Upload className="w-4 h-4 mr-2" /> Upload Resume</Link>
-              </Button>
-              <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/jobs"><Target className="w-4 h-4 mr-2" /> Discover Jobs</Link>
-              </Button>
-              <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/ats-optimizer"><Sparkles className="w-4 h-4 mr-2" /> Resume Optimization</Link>
-              </Button>
-              <Button variant="hero-outline" className="w-full justify-start" asChild>
-                <Link to="/profile"><User className="w-4 h-4 mr-2" /> Edit Profile</Link>
-              </Button>
-            </div>
-          </motion.div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top matches */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass rounded-xl p-6 lg:col-span-2">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold">Top Job Matches</h2>
               {topMatches.length > 0 && (
