@@ -14,7 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center gap-3">
               <SidebarTrigger className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary transition-colors font-medium text-sm">
                 <Menu className="w-5 h-5" />
-                <span className="hidden sm:inline">Menu</span>
+                <span>Menu</span>
               </SidebarTrigger>
               <Link to="/dashboard" className="flex items-center gap-2 lg:hidden">
                 <img src={logoImg} alt="JobPilot" className="w-6 h-6 object-contain" />
