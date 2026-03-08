@@ -165,6 +165,22 @@ const JobDiscovery = () => {
     { value: "Chennai", label: "Chennai" },
   ];
 
+  const experienceOptions = [
+    { value: "all", label: "Any Experience" },
+    { value: "fresher", label: "Fresher (0-1 yr)" },
+    { value: "junior", label: "Junior (1-3 yrs)" },
+    { value: "mid", label: "Mid (3-5 yrs)" },
+    { value: "senior", label: "Senior (5-8 yrs)" },
+    { value: "lead", label: "Lead (8+ yrs)" },
+  ];
+
+  const workTypeOptions = [
+    { value: "all", label: "Any Work Type" },
+    { value: "remote", label: "Remote" },
+    { value: "hybrid", label: "Hybrid" },
+    { value: "onsite", label: "On-site" },
+  ];
+
   const allJobs = jobs.length > 0 ? jobs : savedJobs;
   const displayJobs = allJobs.filter((job) => {
     // Filter out low-quality aggregator pages (very low score with no matched skills)
