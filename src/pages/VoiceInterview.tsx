@@ -316,7 +316,7 @@ export default function VoiceInterview() {
       setIsProcessing(false);
       askNextQuestion(newHistory);
     }
-  }, [session, sessionId, stopMic, stopAllSpeaking, useElevenLabs, elevenSTT, browserSTT, speakText, startMic, askNextQuestion]);
+  }, [session, sessionId, stopMic, stopAllSpeaking, useElevenLabs, elevenSTT, browserSTT, speakText, startMic, askNextQuestion, correctTranscript]);
 
   const endInterview = async (history: Message[]) => {
     setIsEnding(true);
