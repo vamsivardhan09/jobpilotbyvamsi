@@ -103,10 +103,16 @@ function isAggregatorPage(title: string, snippet: string, url: string): boolean 
 
   if (titleAggregatorPatterns.some(p => p.test(lowerTitle))) return true;
 
-  // URL patterns for search/listing pages
+  // URL patterns for search/listing pages on job boards
   const aggregatorUrlPatterns = [
-    /\/(search|jobs-in|job-listing|explore)\//i,
-    /[?&](q|query|keyword)=/i,
+    /indeed\.com\/q-/i,                                            // Indeed search URLs
+    /naukri\.com\/[\w-]+-jobs$/i,                                  // Naukri category pages
+    /naukri\.com\/[\w-]+-jobs-in-/i,                               // Naukri location search pages
+    /glassdoor\.com\/Job\/.*-jobs-SRCH/i,                          // Glassdoor search pages
+    /linkedin\.com\/jobs\/[\w-]+-jobs$/i,                          // LinkedIn search pages
+    /wellfound\.com\/role\/r\//i,                                  // Wellfound role listing pages
+    /ambitionbox\.com\/jobs\//i,                                   // AmbitionBox listing pages
+    /[?&](q|query|keyword)=/i,                                    // Any search query URLs
   ];
 
   if (aggregatorUrlPatterns.some(p => p.test(lowerUrl))) return true;
