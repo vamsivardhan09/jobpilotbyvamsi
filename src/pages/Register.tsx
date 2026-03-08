@@ -8,18 +8,15 @@ import { Briefcase } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !name.trim()) return;
     setLoading(true);
@@ -36,27 +33,7 @@ const Register = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setOtpSent(true);
-      toast({ title: "Code sent!", description: "Check your email for the verification code." });
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (otp.length !== 6) return;
-    setLoading(true);
-
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: otp,
-      type: "email",
-    });
-
-    setLoading(false);
-
-    if (error) {
-      toast({ title: "Invalid code", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Account created!", description: "Welcome to JobMind." });
+      toast({ title: "Welcome!", description: "Account created successfully." });
       navigate("/dashboard");
     }
   };
@@ -78,70 +55,33 @@ const Register = () => {
             <p className="text-sm text-muted-foreground">Start your AI-powered job search</p>
           </div>
 
-          <div className="glass rounded-xl p-6 space-y-4">
-            {!otpSent ? (
-              <form onSubmit={handleSendOTP} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button variant="hero" className="w-full" disabled={loading} type="submit">
-                  {loading ? "Sending..." : "Create Account"}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  We'll send a verification code to your email.
-                </p>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-center text-muted-foreground">
-                  Enter the 6-digit code sent to <span className="text-foreground font-medium">{email}</span>
-                </p>
-                <div className="flex justify-center">
-                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <Button
-                  variant="hero"
-                  className="w-full"
-                  disabled={loading || otp.length !== 6}
-                  onClick={handleVerifyOTP}
-                >
-                  {loading ? "Verifying..." : "Verify & Continue"}
-                </Button>
-                <button
-                  onClick={() => { setOtpSent(false); setOtp(""); }}
-                  className="text-xs text-primary hover:underline block mx-auto"
-                >
-                  Use a different email
-                </button>
+          <div className="glass rounded-xl p-6">
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <Button variant="hero" className="w-full" disabled={loading} type="submit">
+                {loading ? "Creating..." : "Create Account"}
+              </Button>
+            </form>
           </div>
 
           <p className="text-sm text-center text-muted-foreground mt-6">
