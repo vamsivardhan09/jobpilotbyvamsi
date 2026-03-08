@@ -13,6 +13,7 @@ import ResumeUpload from "./pages/ResumeUpload";
 import JobDiscovery from "./pages/JobDiscovery";
 import ResumeOptimizer from "./pages/ResumeOptimizer";
 import ResumePreview from "./pages/ResumePreview";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
