@@ -19,7 +19,7 @@ export function useElevenLabsSTT(): UseElevenLabsSTTReturn {
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
-    commitStrategy: "vad",
+    commitStrategy: "vad" as any,
     onCommittedTranscript: (data) => {
       committedRef.current += (committedRef.current ? " " : "") + data.text;
       setCommittedText(committedRef.current);
