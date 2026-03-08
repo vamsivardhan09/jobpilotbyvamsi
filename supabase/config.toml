@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.interview-ai]
 verify_jwt = false
+
+[functions.correct-transcript]
+verify_jwt = false

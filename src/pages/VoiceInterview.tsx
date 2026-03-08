@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Mic, MicOff, Volume2, VolumeX, Loader2,
-  PhoneOff, Bot, User
+  PhoneOff, Bot, User, AlertCircle
 } from "lucide-react";
 import VoiceWaveform from "@/components/interview/VoiceWaveform";
 import AIAvatar from "@/components/interview/AIAvatar";
@@ -51,6 +51,7 @@ export default function VoiceInterview() {
   const transcript = useElevenLabs ? elevenSTT.transcript : browserSTT.transcript;
   const isSpeaking = useElevenLabs ? elevenTTS.isSpeaking : browserTTS.isSpeaking;
   const isConnecting = useElevenLabs ? elevenSTT.isConnecting : false;
+  const sttError = useElevenLabs ? elevenSTT.error : browserSTT.error;
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const maxQuestions = 10;
@@ -61,6 +62,27 @@ export default function VoiceInterview() {
   const questionCountRef = useRef(0);
   const aiSpeakingRef = useRef(false);
   const interviewStartedRef = useRef(false);
+  const correctionCacheRef = useRef<Map<string, string>>(new Map());
+
+  // AI transcript correction
+  const correctTranscript = useCallback(async (text: string): Promise<string> => {
+    if (!text || text.trim().length < 5) return text;
+    
+    // Check cache
+    const cached = correctionCacheRef.current.get(text.trim());
+    if (cached) return cached;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("correct-transcript", {
+        body: { transcript: text },
+      });
+      if (error || !data?.corrected) return text;
+      correctionCacheRef.current.set(text.trim(), data.corrected);
+      return data.corrected;
+    } catch {
+      return text; // Fallback to original on any error
+    }
+  }, []);
 
   // Keep refs in sync
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -224,7 +246,10 @@ export default function VoiceInterview() {
     }
     lastTranscriptRef.current = "";
 
-    const userMsg: Message = { role: "user", content: answerText };
+    // Apply AI transcript correction
+    const correctedText = await correctTranscript(answerText);
+
+    const userMsg: Message = { role: "user", content: correctedText };
     const currentMessages = messagesRef.current;
     const newHistory = [...currentMessages, userMsg];
     setMessages(newHistory);
@@ -291,7 +316,7 @@ export default function VoiceInterview() {
       setIsProcessing(false);
       askNextQuestion(newHistory);
     }
-  }, [session, sessionId, stopMic, stopAllSpeaking, useElevenLabs, elevenSTT, browserSTT, speakText, startMic, askNextQuestion]);
+  }, [session, sessionId, stopMic, stopAllSpeaking, useElevenLabs, elevenSTT, browserSTT, speakText, startMic, askNextQuestion, correctTranscript]);
 
   const endInterview = async (history: Message[]) => {
     setIsEnding(true);
@@ -428,9 +453,15 @@ export default function VoiceInterview() {
       </ScrollArea>
 
       {/* Live transcript bar */}
-      {(isListening || transcript) && (
+      {(isListening || transcript || sttError) && (
         <div className="px-4 py-3 border-t border-border/30 bg-muted/30">
           <div className="max-w-2xl mx-auto">
+            {sttError && (
+              <p className="text-xs text-amber-500 mb-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {sttError}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
               {isListening && <span className="w-2 h-2 bg-destructive rounded-full animate-pulse" />}
               {isListening ? "Listening..." : "Your answer:"}
