@@ -78,8 +78,9 @@ Optimize the resume for this specific job. Focus on:
               parameters: {
                 type: "object",
                 properties: {
-                  ats_match_score: { type: "number", description: "Realistic ATS match score 0-100. Be honest - different field = 20-40, partial match = 40-65, good match = 65-85, excellent = 85-100" },
-                  is_good_match: { type: "boolean", description: "True only if score >= 50 and resume is reasonably relevant to the job" },
+                  original_ats_score: { type: "number", description: "Current ATS score of the resume AS-IS against this job (0-100). Be brutally honest." },
+                  optimized_ats_score: { type: "number", description: "Projected ATS score AFTER applying optimizations (0-100). Should be 10-25 points higher than original, max 95." },
+                  is_good_match: { type: "boolean", description: "True only if original_ats_score >= 45 and resume is reasonably relevant to the job" },
                   mismatch_reason: { type: "string", description: "If not a good match, explain why and suggest better-suited roles. Empty string if good match." },
                   optimized_summary: { type: "string", description: "Rewritten professional summary targeting this job" },
                   optimized_experience: {
