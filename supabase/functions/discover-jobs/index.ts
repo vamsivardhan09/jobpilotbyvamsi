@@ -73,17 +73,42 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
 // Filter out aggregator/listing index pages (not actual job postings)
 function isAggregatorPage(title: string, snippet: string, url: string): boolean {
   const lower = (title + " " + snippet).toLowerCase();
+  const lowerTitle = title.toLowerCase();
+  const lowerUrl = url.toLowerCase();
+
   // Patterns that indicate aggregator pages, not individual jobs
   const aggregatorPatterns = [
-    /\d{2,},?\d{3,}\+?\s*(software|developer|engineer|jobs)/i,  // "103580 Software Engineer Jobs"
-    /\d{1,3},\d{3}\+?\s*(open )?jobs/i,                          // "2,07,032 jobs"
+    /\d{3,}\s+.*\bjobs?\b/i,                                     // "77648 machine learning engineer jobs", "40791 jobs"
+    /\d{1,3}[,\.]\d{3,}\s+.*\bjobs?\b/i,                         // "77,648 jobs", "1,23,456 jobs"
+    /\d{1,3},\d{2,3},\d{3}\+?\s*/i,                              // Indian number format "2,07,032"
     /top\s+\d+\+?\s+/i,                                          // "Top 50,000+"
     /\d+\s+new\)/i,                                               // "(1,476 new)"
     /india'?s?\s+no\.?\s*1\s+job\s+site/i,                       // "India's No.1 Job Site"
     /apply to \d{3,}/i,                                           // "Apply To 103580"
     /browse\s+\d{3,}/i,                                           // "Browse 13173"
   ];
-  return aggregatorPatterns.some(p => p.test(lower));
+
+  if (aggregatorPatterns.some(p => p.test(lower))) return true;
+
+  // Title-only patterns for generic listing pages
+  const titleAggregatorPatterns = [
+    /^([\w\s]+)\bjobs?\b\s*(in\s+\w+|near|$)/i,                  // "Software Developer Jobs in India"
+    /^jobs?\s+for\s+/i,                                           // "Jobs For Software Developer"
+    /\bjobs?\b\s*[-–]\s*\d{4}/i,                                  // "Jobs - 2026"
+    /\bjobs?\s+by\s+\w+/i,                                        // "Jobs By Workable"
+  ];
+
+  if (titleAggregatorPatterns.some(p => p.test(lowerTitle))) return true;
+
+  // URL patterns for search/listing pages
+  const aggregatorUrlPatterns = [
+    /\/(search|jobs-in|job-listing|explore)\//i,
+    /[?&](q|query|keyword)=/i,
+  ];
+
+  if (aggregatorUrlPatterns.some(p => p.test(lowerUrl))) return true;
+
+  return false;
 }
 
 function isJobUrl(url: string): boolean {
