@@ -2,13 +2,38 @@ import { useState, useRef, useCallback } from "react";
 
 const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 
+// Track if ElevenLabs has failed so we skip it on subsequent calls
+let elevenLabsFailed = false;
+
 export function useElevenLabsTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const speakWithBrowser = useCallback((text: string) => {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.name.includes("Google") && v.lang.startsWith("en"))
+      || voices.find(v => v.lang.startsWith("en-"));
+    if (preferred) utterance.voice = preferred;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+  }, []);
+
   const speak = useCallback(async (text: string) => {
     stop();
+
+    // If ElevenLabs previously failed, go straight to browser TTS
+    if (elevenLabsFailed) {
+      speakWithBrowser(text);
+      return;
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -27,8 +52,8 @@ export function useElevenLabsTTS() {
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || `TTS failed: ${response.status}`);
+        elevenLabsFailed = true;
+        throw new Error(`TTS failed: ${response.status}`);
       }
 
       const data = await response.json();
@@ -42,24 +67,10 @@ export function useElevenLabsTTS() {
       await audio.play();
     } catch (e: any) {
       if (e.name === "AbortError") return;
-      console.warn("ElevenLabs TTS failed, falling back to browser TTS:", e.message);
-      // Fallback to browser SpeechSynthesis
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.0;
-        const voices = window.speechSynthesis.getVoices();
-        const preferred = voices.find(v => v.name.includes("Google") && v.lang.startsWith("en"))
-          || voices.find(v => v.lang.startsWith("en-"));
-        if (preferred) utterance.voice = preferred;
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-      } catch {
-        setIsSpeaking(false);
-      }
+      console.warn("ElevenLabs TTS unavailable, using browser voice:", e.message);
+      speakWithBrowser(text);
     }
-  }, []);
+  }, [speakWithBrowser]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -68,6 +79,7 @@ export function useElevenLabsTTS() {
       audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
+    window.speechSynthesis.cancel();
     setIsSpeaking(false);
   }, []);
 
