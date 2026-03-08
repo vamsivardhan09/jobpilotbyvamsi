@@ -453,9 +453,15 @@ export default function VoiceInterview() {
       </ScrollArea>
 
       {/* Live transcript bar */}
-      {(isListening || transcript) && (
+      {(isListening || transcript || sttError) && (
         <div className="px-4 py-3 border-t border-border/30 bg-muted/30">
           <div className="max-w-2xl mx-auto">
+            {sttError && (
+              <p className="text-xs text-amber-500 mb-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {sttError}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
               {isListening && <span className="w-2 h-2 bg-destructive rounded-full animate-pulse" />}
               {isListening ? "Listening..." : "Your answer:"}
