@@ -38,12 +38,14 @@ Candidate's Matching Skills: ${(matchedSkills || []).join(", ")}
 Skills to Highlight/Add: ${(missingSkills || []).join(", ")}
 
 CRITICAL SCORING RULES:
-- Calculate ats_match_score as a REALISTIC percentage (0-100) of how well the resume matches THIS SPECIFIC job
-- If the resume is for a completely different field (e.g., software developer resume for data analyst job), score should be 20-40%
-- If partially relevant but missing key skills, score should be 40-65%
-- If well matched with minor gaps, score should be 65-85%
-- Only score 85-100% if the resume is an excellent match
-- Set is_good_match to false if score is below 50%
+- Calculate original_ats_score: the CURRENT ATS score of the resume AS-IS against this job (0-100). Be brutally honest.
+- Calculate optimized_ats_score: the projected ATS score AFTER applying all your optimizations (0-100).
+- If the resume is for a completely different field (e.g., software developer resume for data analyst job), original score should be 15-35%
+- If partially relevant but missing key skills, original score should be 35-55%
+- If well matched with minor gaps, original score should be 55-80%
+- Only score 80-100% if the resume is an excellent match
+- The optimized score should realistically be 10-25 points higher than original (never exceed 95%)
+- Set is_good_match to false if original score is below 45%
 - If not a good match, explain WHY in mismatch_reason and suggest what kind of roles this resume IS suited for
 
 Optimize the resume for this specific job. Focus on:
