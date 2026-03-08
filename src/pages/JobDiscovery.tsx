@@ -538,7 +538,7 @@ const JobDiscovery = () => {
               <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
               <select
                 value={experienceFilter}
-                onChange={(e) => { setExperienceFilter(e.target.value); setVisibleCount(15); }}
+                onChange={(e) => { handleExperienceChange(e.target.value); setVisibleCount(15); }}
                 className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
               >
