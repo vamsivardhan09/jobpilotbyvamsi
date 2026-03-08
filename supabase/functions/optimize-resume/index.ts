@@ -128,7 +128,7 @@ Optimize the resume for this specific job. Focus on:
                   match_improvement: { type: "number", description: "Estimated match score improvement (0-20 points)" },
                   tips: { type: "array", items: { type: "string" }, description: "Actionable tips including specific keywords to add" },
                 },
-                required: ["ats_match_score", "is_good_match", "mismatch_reason", "optimized_summary", "optimized_experience", "optimized_skills_section", "ats_keywords", "keywords_to_add_manually", "improvements", "match_improvement", "tips"],
+                required: ["original_ats_score", "optimized_ats_score", "is_good_match", "mismatch_reason", "optimized_summary", "optimized_experience", "optimized_skills_section", "ats_keywords", "keywords_to_add_manually", "improvements", "match_improvement", "tips"],
                 additionalProperties: false,
               },
             },
