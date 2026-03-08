@@ -39,6 +39,7 @@ const JobDiscovery = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobMatch | null>(null);
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "stretch">("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
   const [visibleCount, setVisibleCount] = useState(15);
   const [totalResults, setTotalResults] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -82,7 +83,7 @@ const JobDiscovery = () => {
           skills: skills.map((s) => ({ name: s.name, category: s.category, proficiency: s.proficiency })),
           experienceLevel: profile?.experience_level,
           preferredRoles: profile?.preferred_roles,
-          location: profile?.preferred_locations?.[0] || "India",
+          location: locationFilter !== "all" ? locationFilter : (profile?.preferred_locations?.[0] || "India"),
         },
       });
 
@@ -137,11 +138,33 @@ const JobDiscovery = () => {
     }
   };
 
+  const locationOptions = [
+    { value: "all", label: "All Locations" },
+    { value: "India", label: "India" },
+    { value: "Remote", label: "Remote" },
+    { value: "USA", label: "USA" },
+    { value: "Bengaluru", label: "Bengaluru" },
+    { value: "Hyderabad", label: "Hyderabad" },
+    { value: "Mumbai", label: "Mumbai" },
+    { value: "Delhi", label: "Delhi / NCR" },
+    { value: "Pune", label: "Pune" },
+    { value: "Chennai", label: "Chennai" },
+  ];
+
   const allJobs = jobs.length > 0 ? jobs : savedJobs;
   const displayJobs = allJobs.filter((job) => {
-    if (filter === "high") return (job.match_score ?? 0) >= 80;
-    if (filter === "medium") return (job.match_score ?? 0) >= 60 && (job.match_score ?? 0) < 80;
-    if (filter === "stretch") return (job.match_score ?? 0) < 60;
+    // Score filter
+    if (filter === "high" && (job.match_score ?? 0) < 80) return false;
+    if (filter === "medium" && ((job.match_score ?? 0) < 60 || (job.match_score ?? 0) >= 80)) return false;
+    if (filter === "stretch" && (job.match_score ?? 0) >= 60) return false;
+    // Location filter
+    if (locationFilter !== "all") {
+      const loc = (job.location || "").toLowerCase();
+      const title = (job.title || "").toLowerCase();
+      const desc = (job.description || "").toLowerCase();
+      const term = locationFilter.toLowerCase();
+      if (!loc.includes(term) && !title.includes(term) && !desc.includes(term)) return false;
+    }
     return true;
   });
 
@@ -255,22 +278,47 @@ const JobDiscovery = () => {
         )}
 
         {/* Filters */}
-        {displayJobs.length > 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-            {(["all", "high", "medium", "stretch"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => { setFilter(f); setVisibleCount(15); }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
-                  filter === f
-                    ? "bg-primary/10 text-primary border-primary/30"
-                    : "bg-secondary text-muted-foreground border-border/50 hover:border-primary/20"
-                }`}
+        {allJobs.length > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+            {/* Score filters */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+              <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+              {(["all", "high", "medium", "stretch"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => { setFilter(f); setVisibleCount(15); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
+                    filter === f
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "bg-secondary text-muted-foreground border-border/50 hover:border-primary/20"
+                  }`}
+                >
+                  {f === "all" ? `All (${allJobs.length})` : f === "high" ? "High Match (80+)" : f === "medium" ? "Medium (60-79)" : "Stretch (<60)"}
+                </button>
+              ))}
+            </div>
+
+            {/* Location dropdown */}
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+              <select
+                value={locationFilter}
+                onChange={(e) => { setLocationFilter(e.target.value); setVisibleCount(15); }}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
               >
-                {f === "all" ? `All (${allJobs.length})` : f === "high" ? "High Match (80+)" : f === "medium" ? "Medium (60-79)" : "Stretch (<60)"}
-              </button>
-            ))}
+                {locationOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Result count */}
+            {locationFilter !== "all" && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {displayJobs.length} result{displayJobs.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </motion.div>
         )}
 
