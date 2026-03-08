@@ -175,6 +175,7 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
   );
 };
 
+const JobDiscovery = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [skills, setSkills] = useState<any[]>([]);
