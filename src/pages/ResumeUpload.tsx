@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback } from "react";
+import JSZip from "jszip";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -404,17 +405,16 @@ async function readFileAsText(file: File): Promise<string> {
     return text.replace(/\s+/g, " ").trim();
   }
 
-  // For DOCX, extract from XML
+  // For DOCX, unzip and extract XML text
   if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const buffer = await file.arrayBuffer();
-    const decoder = new TextDecoder("utf-8", { fatal: false });
-    const rawText = decoder.decode(new Uint8Array(buffer));
+    const zip = await JSZip.loadAsync(file);
+    const docXml = await zip.file("word/document.xml")?.async("string");
+    if (!docXml) return "";
 
-    // Extract text content from XML tags
     const textParts: string[] = [];
-    const tagRegex = /<w:t[^>]*>([^<]+)<\/w:t>/g;
+    const tagRegex = /<w:t[^>]*>([^<]*)<\/w:t>/g;
     let match;
-    while ((match = tagRegex.exec(rawText)) !== null) {
+    while ((match = tagRegex.exec(docXml)) !== null) {
       textParts.push(match[1]);
     }
 
