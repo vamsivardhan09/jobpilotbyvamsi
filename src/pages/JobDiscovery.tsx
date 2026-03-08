@@ -75,6 +75,9 @@ const JobDiscovery = () => {
     setProgressText("Searching job boards across India and globally...");
 
     try {
+      // Delete old low-quality matches (score < 20) before new discovery
+      await supabase.from("job_matches").delete().eq("user_id", user.id).lt("match_score", 20);
+
       setTimeout(() => setProgressText("Analyzing job listings with AI..."), 3000);
       setTimeout(() => setProgressText("Scoring matches against your skills..."), 6000);
 
@@ -105,27 +108,35 @@ const JobDiscovery = () => {
 
       setJobs(discovered);
 
-      // Save to database
-      const rows = discovered.map((job) => ({
-        user_id: user.id,
-        title: job.title,
-        company: job.company || null,
-        location: job.location || null,
-        description: job.description || null,
-        salary_range: job.salary_range || null,
-        match_score: job.match_score,
-        required_skills: job.required_skills || [],
-        matched_skills: job.matched_skills || [],
-        missing_skills: job.missing_skills || [],
-        apply_url: job.apply_url || null,
-        status: "new",
-      }));
+      // Save to database — deduplicate by apply_url
+      const existingUrls = new Set(savedJobs.map((j) => j.apply_url).filter(Boolean));
+      const newJobs = discovered.filter((job) => !existingUrls.has(job.apply_url));
 
-      const { data: insertedJobs, error: dbError } = await supabase.from("job_matches").insert(rows).select();
-      if (dbError) console.error("DB save error:", dbError);
-      if (insertedJobs) {
-        setSavedJobs((prev) => [...insertedJobs, ...prev]);
-        setJobs(insertedJobs);
+      if (newJobs.length > 0) {
+        const rows = newJobs.map((job) => ({
+          user_id: user.id,
+          title: job.title,
+          company: job.company || null,
+          location: job.location || null,
+          description: job.description || null,
+          salary_range: job.salary_range || null,
+          match_score: job.match_score,
+          required_skills: job.required_skills || [],
+          matched_skills: job.matched_skills || [],
+          missing_skills: job.missing_skills || [],
+          apply_url: job.apply_url || null,
+          status: "new",
+        }));
+
+        const { data: insertedJobs, error: dbError } = await supabase.from("job_matches").insert(rows).select();
+        if (dbError) console.error("DB save error:", dbError);
+        if (insertedJobs) {
+          setSavedJobs((prev) => [...insertedJobs, ...prev]);
+          setJobs(insertedJobs);
+        }
+      } else {
+        // All jobs already saved, use discovered data
+        setJobs(discovered);
       }
 
       toast({ title: "Jobs discovered!", description: `Found ${discovered.length} matching positions.` });
@@ -153,6 +164,8 @@ const JobDiscovery = () => {
 
   const allJobs = jobs.length > 0 ? jobs : savedJobs;
   const displayJobs = allJobs.filter((job) => {
+    // Filter out low-quality aggregator pages (very low score with no matched skills)
+    if ((job.match_score ?? 0) < 15 && (!job.matched_skills || job.matched_skills.length === 0)) return false;
     // Score filter
     if (filter === "high" && (job.match_score ?? 0) < 80) return false;
     if (filter === "medium" && ((job.match_score ?? 0) < 60 || (job.match_score ?? 0) >= 80)) return false;
