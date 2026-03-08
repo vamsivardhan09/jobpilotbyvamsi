@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -8,34 +9,30 @@ import {
 
 const faqs = [
   {
-    q: "How does JobPilot find jobs?",
-    a: "Our AI engine dynamically generates search queries based on your resume skills and experience. It scans job boards, company career pages, and aggregators across the internet to find relevant opportunities.",
+    q: "How does the AI job matching work?",
+    a: "Our AI analyzes your resume, extracts skills and experience, then searches major job boards to find positions that match your profile. It scores each job based on skill overlap and relevance.",
   },
   {
-    q: "What file formats are supported for resume upload?",
-    a: "We currently support PDF and DOCX formats. Our parser extracts text, structure, and metadata to build your professional profile.",
+    q: "Is my resume data secure?",
+    a: "Yes. Your data is encrypted in transit and at rest. We never share your personal information with employers without your explicit consent.",
   },
   {
-    q: "How accurate is the compatibility score?",
-    a: "Our matching algorithm compares your skills, experience level, and role preferences against job requirements. Scores above 70% indicate strong alignment, and our users report 95% accuracy in relevance.",
+    q: "How accurate is the ATS optimizer?",
+    a: "Our optimizer uses the same algorithms that top ATS systems use to parse resumes, ensuring your resume passes automated screening with high success rates.",
   },
   {
-    q: "Can I customize the resume optimization?",
-    a: "Yes. The AI generates suggestions for bullet points, keywords, and phrasing. You can accept, edit, or reject each recommendation before downloading the final version.",
+    q: "Can I practice for specific roles?",
+    a: "Absolutely! Our AI interview coach adapts to any role — from software engineering to product management, data science, and more.",
   },
   {
-    q: "Is my data secure?",
-    a: "Absolutely. All data is encrypted in transit and at rest. We never share your resume or personal information with third parties. You can delete your data at any time.",
-  },
-  {
-    q: "Do I need to pay to get started?",
-    a: "No. Our free plan includes 3 resume uploads per month and 10 job matches per day. Upgrade to Pro for unlimited access and advanced features.",
+    q: "What job boards do you search?",
+    a: "We search across LinkedIn, Indeed, Naukri, Glassdoor, and other major platforms to find the best matches for your profile.",
   },
 ];
 
-export const FAQSection = () => {
+export const FAQSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section id="faq" className="py-24">
+    <section id="faq" className="py-24" ref={ref}>
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -75,6 +72,6 @@ export const FAQSection = () => {
       </div>
     </section>
   );
-};
+});
 
-export default FAQSection;
+FAQSection.displayName = "FAQSection";

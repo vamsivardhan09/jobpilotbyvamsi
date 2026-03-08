@@ -1,11 +1,12 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const CTASection = () => {
+export const CTASection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section className="py-24 relative">
+    <section className="py-24 relative" ref={ref}>
       <div className="absolute inset-0 bg-gradient-to-t from-primary/[0.03] to-transparent" />
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
@@ -30,4 +31,6 @@ export const CTASection = () => {
       </div>
     </section>
   );
-};
+});
+
+CTASection.displayName = "CTASection";

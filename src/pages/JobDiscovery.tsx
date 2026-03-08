@@ -278,8 +278,10 @@ const JobDiscovery = () => {
         },
       });
 
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || "Discovery failed");
+      if (error) throw new Error(error.message || "Failed to invoke discover-jobs");
+      if (!data) throw new Error("No response received from job discovery");
+      if (data.error) throw new Error(data.error);
+      if (!data.success) throw new Error("Discovery returned unsuccessful response");
 
       const discovered: JobMatch[] = data.data;
       setTotalResults(data.total || discovered.length);
