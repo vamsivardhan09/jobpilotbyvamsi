@@ -21,116 +21,183 @@ serve(async (req) => {
       );
     }
 
+    const RAPIDAPI_KEY = Deno.env.get("RAPIDAPI_KEY");
+    if (!RAPIDAPI_KEY) {
+      throw new Error("RAPIDAPI_KEY is not configured");
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const skillNames = skills.map((s: any) => typeof s === "string" ? s : s.name).join(", ");
-    const rolesHint = preferredRoles?.length ? `Preferred roles: ${preferredRoles.join(", ")}.` : "";
-    const levelHint = experienceLevel ? `Experience level: ${experienceLevel}.` : "";
-    const locationHint = location ? `Preferred location: ${location}.` : "";
+    const skillNames = skills.map((s: any) => typeof s === "string" ? s : s.name);
 
-    const userPrompt = `Based on this candidate profile, generate 8-12 realistic job listings that would be good matches.
+    // Build search query from preferred roles and skills
+    const roleQuery = preferredRoles?.length
+      ? preferredRoles.slice(0, 2).join(" OR ")
+      : skillNames.slice(0, 3).join(" ");
 
-Skills: ${skillNames}
-${levelHint}
-${rolesHint}
-${locationHint}
+    const locationQuery = location || "United States";
 
-For each job, calculate a match_score (0-100) based on how well the candidate's skills match the job requirements.
-Include a mix of high matches (80-95), medium matches (60-79), and a few stretch opportunities (40-59).
-Make the jobs realistic with real-sounding companies, accurate salary ranges, and specific locations.`;
+    // Fetch real jobs from JSearch API
+    const searchParams = new URLSearchParams({
+      query: roleQuery,
+      page: "1",
+      num_pages: "1",
+      date_posted: "month",
+    });
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    if (location) {
+      searchParams.set("query", `${roleQuery} in ${locationQuery}`);
+    }
+
+    console.log("Searching JSearch for:", searchParams.get("query"));
+
+    const jsearchResponse = await fetch(
+      `https://jsearch.p.rapidapi.com/search?${searchParams.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": "jsearch.p.rapidapi.com",
+        },
+      }
+    );
+
+    if (!jsearchResponse.ok) {
+      const errorText = await jsearchResponse.text();
+      console.error("JSearch API error:", jsearchResponse.status, errorText);
+      if (jsearchResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error(`JSearch API error: ${jsearchResponse.status}`);
+    }
+
+    const jsearchData = await jsearchResponse.json();
+    const rawJobs = jsearchData.data || [];
+
+    if (rawJobs.length === 0) {
+      return new Response(JSON.stringify({ success: true, data: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Use AI to score each job against the candidate's skills
+    const jobSummaries = rawJobs.slice(0, 12).map((job: any, i: number) => ({
+      index: i,
+      title: job.job_title,
+      company: job.employer_name,
+      description: (job.job_description || "").substring(0, 500),
+    }));
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           {
             role: "system",
-            content: "You are a job matching engine. Generate realistic job listings based on candidate profiles. Return structured data only.",
+            content: "You are a skill matching engine. Given candidate skills and job listings, determine which candidate skills match each job and which skills are missing. Return structured data only.",
           },
-          { role: "user", content: userPrompt },
+          {
+            role: "user",
+            content: `Candidate skills: ${skillNames.join(", ")}
+Experience level: ${experienceLevel || "not specified"}
+
+Score these jobs (0-100 match score based on skill overlap):
+${JSON.stringify(jobSummaries)}`,
+          },
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "return_job_matches",
-              description: "Return a list of job matches for the candidate",
+              name: "return_scores",
+              description: "Return match scores for each job",
               parameters: {
                 type: "object",
                 properties: {
-                  jobs: {
+                  scores: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string", description: "Job title" },
-                        company: { type: "string", description: "Company name" },
-                        location: { type: "string", description: "Job location" },
-                        description: { type: "string", description: "2-3 sentence job description" },
-                        salary_range: { type: "string", description: "Salary range like $120k-$160k" },
-                        match_score: { type: "number", description: "Match score 0-100" },
-                        required_skills: { type: "array", items: { type: "string" }, description: "Skills required for this job" },
-                        matched_skills: { type: "array", items: { type: "string" }, description: "Candidate skills that match" },
-                        missing_skills: { type: "array", items: { type: "string" }, description: "Skills the candidate is missing" },
-                        apply_url: { type: "string", description: "A plausible job board URL" },
+                        index: { type: "number" },
+                        match_score: { type: "number" },
+                        matched_skills: { type: "array", items: { type: "string" } },
+                        missing_skills: { type: "array", items: { type: "string" } },
+                        required_skills: { type: "array", items: { type: "string" } },
                       },
-                      required: ["title", "company", "location", "description", "match_score", "required_skills", "matched_skills", "missing_skills"],
+                      required: ["index", "match_score", "matched_skills", "missing_skills", "required_skills"],
                       additionalProperties: false,
                     },
                   },
                 },
-                required: ["jobs"],
+                required: ["scores"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "return_job_matches" } },
+        tool_choice: { type: "function", function: { name: "return_scores" } },
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    let scoreMap: Record<number, any> = {};
+
+    if (aiResponse.ok) {
+      const aiData = await aiResponse.json();
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        const parsed = JSON.parse(toolCall.function.arguments);
+        for (const s of (parsed.scores || [])) {
+          scoreMap[s.index] = s;
+        }
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+    } else {
+      console.warn("AI scoring failed, using basic matching");
     }
 
-    const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    // Combine real job data with AI scores
+    const jobs = rawJobs.slice(0, 12).map((job: any, i: number) => {
+      const score = scoreMap[i];
+      const salaryMin = job.job_min_salary;
+      const salaryMax = job.job_max_salary;
+      const salaryCurrency = job.job_salary_currency || "USD";
+      const salaryPeriod = job.job_salary_period || "";
 
-    if (!toolCall?.function?.arguments) {
-      const content = aiData.choices?.[0]?.message?.content || "";
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return new Response(JSON.stringify({ success: true, data: parsed.jobs || [] }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      let salaryRange = null;
+      if (salaryMin && salaryMax) {
+        salaryRange = `${salaryCurrency === "USD" ? "$" : salaryCurrency}${Math.round(salaryMin / 1000)}k-${Math.round(salaryMax / 1000)}k${salaryPeriod ? ` ${salaryPeriod}` : ""}`;
+      } else if (salaryMin) {
+        salaryRange = `From ${salaryCurrency === "USD" ? "$" : salaryCurrency}${Math.round(salaryMin / 1000)}k`;
       }
-      throw new Error("No structured data returned from AI");
-    }
 
-    const parsedData = JSON.parse(toolCall.function.arguments);
+      return {
+        title: job.job_title || "Unknown Title",
+        company: job.employer_name || "Unknown Company",
+        location: [job.job_city, job.job_state, job.job_country].filter(Boolean).join(", ") || (job.job_is_remote ? "Remote" : "Unknown"),
+        description: (job.job_description || "").substring(0, 300) + "...",
+        salary_range: salaryRange,
+        match_score: score?.match_score ?? 50,
+        required_skills: score?.required_skills ?? [],
+        matched_skills: score?.matched_skills ?? [],
+        missing_skills: score?.missing_skills ?? [],
+        apply_url: job.job_apply_link || null,
+      };
+    });
 
-    return new Response(JSON.stringify({ success: true, data: parsedData.jobs || [] }), {
+    // Sort by match score descending
+    jobs.sort((a: any, b: any) => b.match_score - a.match_score);
+
+    return new Response(JSON.stringify({ success: true, data: jobs }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
