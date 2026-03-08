@@ -169,7 +169,8 @@ const JobDiscovery = () => {
     // Client-side aggregator title filtering
     const t = (job.title || "").toLowerCase();
     if (/^\d{3,}/.test(job.title || "")) return false; // Starts with large number like "77648..."
-    if (/\bjobs?\s*(in|near|by|for|\d{4}|$)/i.test(t) && !/\bat\b/i.test(t)) return false; // "X Jobs in India" but not "X at Company"
+    if (/\bjob\s+vacancies\b/i.test(t)) return false; // "Job Vacancies" listings
+    if (/\bjobs?\s*$/i.test(t) && !/\bat\b/i.test(t)) return false; // Title ending with "Jobs" but not "Job at Company"
     // Score filter
     if (filter === "high" && (job.match_score ?? 0) < 80) return false;
     if (filter === "medium" && ((job.match_score ?? 0) < 60 || (job.match_score ?? 0) >= 80)) return false;

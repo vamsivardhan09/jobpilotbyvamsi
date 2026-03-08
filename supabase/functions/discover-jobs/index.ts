@@ -90,12 +90,14 @@ function isAggregatorPage(title: string, snippet: string, url: string): boolean 
 
   if (aggregatorPatterns.some(p => p.test(lower))) return true;
 
-  // Title-only patterns for generic listing pages
+  // Title-only patterns for generic listing pages (be careful not to filter real jobs)
   const titleAggregatorPatterns = [
-    /^([\w\s]+)\bjobs?\b\s*(in\s+\w+|near|$)/i,                  // "Software Developer Jobs in India"
     /^jobs?\s+for\s+/i,                                           // "Jobs For Software Developer"
     /\bjobs?\b\s*[-–]\s*\d{4}/i,                                  // "Jobs - 2026"
     /\bjobs?\s+by\s+\w+/i,                                        // "Jobs By Workable"
+    /\bjob\s+vacancies\b/i,                                       // "React Js Developer Job Vacancies"
+    /^\d+\s+\d+\s+to\s+\d+/i,                                    // "25 0 to 1 Year Experience..."
+    /\bjobs?\s*$/i,                                                // Title ending with just "Jobs"
   ];
 
   if (titleAggregatorPatterns.some(p => p.test(lowerTitle))) return true;
