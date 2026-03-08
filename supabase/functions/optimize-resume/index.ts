@@ -24,7 +24,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const userPrompt = `You are an expert resume optimizer and ATS specialist.
+    const userPrompt = `You are an expert resume optimizer and ATS specialist. Be BRUTALLY HONEST about how well this resume matches the job.
 
 Given this ORIGINAL RESUME:
 ${resumeText.substring(0, 6000)}
@@ -37,13 +37,23 @@ Required Skills: ${(requiredSkills || []).join(", ")}
 Candidate's Matching Skills: ${(matchedSkills || []).join(", ")}
 Skills to Highlight/Add: ${(missingSkills || []).join(", ")}
 
+CRITICAL SCORING RULES:
+- Calculate ats_match_score as a REALISTIC percentage (0-100) of how well the resume matches THIS SPECIFIC job
+- If the resume is for a completely different field (e.g., software developer resume for data analyst job), score should be 20-40%
+- If partially relevant but missing key skills, score should be 40-65%
+- If well matched with minor gaps, score should be 65-85%
+- Only score 85-100% if the resume is an excellent match
+- Set is_good_match to false if score is below 50%
+- If not a good match, explain WHY in mismatch_reason and suggest what kind of roles this resume IS suited for
+
 Optimize the resume for this specific job. Focus on:
 1. Rewriting the professional summary to target this role
 2. Reordering and rewording experience bullets to emphasize relevant achievements
 3. Adding ATS-friendly keywords from the job description
 4. Highlighting matched skills prominently
 5. Suggesting how to address missing skills (transferable experience, willingness to learn)
-6. Quantifying achievements where possible`;
+6. Quantifying achievements where possible
+7. Provide actionable tips including specific keywords to manually add to their resume before applying`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -54,7 +64,7 @@ Optimize the resume for this specific job. Focus on:
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are an expert resume writer and ATS optimization specialist. Return structured JSON only." },
+          { role: "system", content: "You are an expert resume writer and ATS optimization specialist. Be honest and realistic about match quality. Return structured JSON only." },
           { role: "user", content: userPrompt },
         ],
         tools: [
@@ -62,10 +72,13 @@ Optimize the resume for this specific job. Focus on:
             type: "function",
             function: {
               name: "return_optimized_resume",
-              description: "Return the optimized resume content",
+              description: "Return the optimized resume content with honest scoring",
               parameters: {
                 type: "object",
                 properties: {
+                  ats_match_score: { type: "number", description: "Realistic ATS match score 0-100. Be honest - different field = 20-40, partial match = 40-65, good match = 65-85, excellent = 85-100" },
+                  is_good_match: { type: "boolean", description: "True only if score >= 50 and resume is reasonably relevant to the job" },
+                  mismatch_reason: { type: "string", description: "If not a good match, explain why and suggest better-suited roles. Empty string if good match." },
                   optimized_summary: { type: "string", description: "Rewritten professional summary targeting this job" },
                   optimized_experience: {
                     type: "array",
@@ -94,6 +107,7 @@ Optimize the resume for this specific job. Focus on:
                     },
                   },
                   ats_keywords: { type: "array", items: { type: "string" }, description: "Top ATS keywords to include" },
+                  keywords_to_add_manually: { type: "array", items: { type: "string" }, description: "Specific keywords the user should add to their resume before applying" },
                   improvements: {
                     type: "array",
                     items: {
@@ -109,9 +123,9 @@ Optimize the resume for this specific job. Focus on:
                     },
                   },
                   match_improvement: { type: "number", description: "Estimated match score improvement (0-20 points)" },
-                  tips: { type: "array", items: { type: "string" }, description: "Additional tips for the candidate" },
+                  tips: { type: "array", items: { type: "string" }, description: "Actionable tips including specific keywords to add" },
                 },
-                required: ["optimized_summary", "optimized_experience", "optimized_skills_section", "ats_keywords", "improvements", "match_improvement", "tips"],
+                required: ["ats_match_score", "is_good_match", "mismatch_reason", "optimized_summary", "optimized_experience", "optimized_skills_section", "ats_keywords", "keywords_to_add_manually", "improvements", "match_improvement", "tips"],
                 additionalProperties: false,
               },
             },
