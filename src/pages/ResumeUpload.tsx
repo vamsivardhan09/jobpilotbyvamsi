@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
   Briefcase, Upload, FileText, X, CheckCircle2, Loader2,
-  ArrowLeft, Brain, AlertTriangle
+  ArrowLeft, Brain, AlertTriangle, Search
 } from "lucide-react";
 
 const ACCEPTED_TYPES = [
