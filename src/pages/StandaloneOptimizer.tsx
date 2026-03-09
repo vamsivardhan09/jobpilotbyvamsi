@@ -27,8 +27,8 @@ const StandaloneOptimizer = () => {
   const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [optimizedScore, setOptimizedScore] = useState<number | null>(null);
 
-  // Load user's primary resume on mount
-  useState(() => {
+  // Load user's latest resume on mount
+  useEffect(() => {
     if (!user) return;
     supabase
       .from("resumes")
@@ -42,7 +42,7 @@ const StandaloneOptimizer = () => {
         }
         setResumeLoaded(true);
       });
-  });
+  }, [user]);
 
   const handleOptimize = async () => {
     if (!resume?.raw_text || !user) return;
