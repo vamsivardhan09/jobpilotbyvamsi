@@ -29,7 +29,7 @@ const ResumeOptimizer = () => {
     const load = async () => {
       const [jobRes, resumeRes] = await Promise.all([
         supabase.from("job_matches").select("*").eq("id", jobMatchId).eq("user_id", user.id).single(),
-        supabase.from("resumes").select("*").eq("user_id", user.id).eq("is_primary", true).order("created_at", { ascending: false }).limit(1).single(),
+        supabase.from("resumes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).single(),
       ]);
       setJobMatch(jobRes.data);
       setResume(resumeRes.data);
