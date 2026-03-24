@@ -634,7 +634,7 @@ const JobDiscovery = () => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="lg:col-span-3 glass rounded-xl p-6 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto"
+              className="lg:col-span-3 glass rounded-xl p-4 sm:p-6 lg:sticky lg:top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto min-w-0"
             >
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
