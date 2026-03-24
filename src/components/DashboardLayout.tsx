@@ -1,7 +1,8 @@
 import logoImg from "@/assets/jobpilot-logo.png";
+import { useState } from "react";
 import {
   LayoutDashboard, Upload, Target, Sparkles, Mic, User,
-  MoreHorizontal, LogOut,
+  MoreHorizontal, LogOut, BarChart3,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -14,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { ATSScoreChecker } from "@/components/ATSScoreChecker";
 
 const primaryNav = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -31,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [atsOpen, setAtsOpen] = useState(false);
   const isActive = (url: string) => location.pathname === url || location.pathname.startsWith(url + "/");
 
   const handleSignOut = async () => {
@@ -42,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen flex flex-col w-full">
       <header className="h-14 flex items-center justify-between border-b border-border/30 glass sticky top-0 z-50 px-4">
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link to="/dashboard" className="flex items-center gap-2 mr-1 sm:mr-3">
+          <Link to="/dashboard" className="flex items-center gap-2 mr-1 sm:mr-3 shrink-0">
             <img src={logoImg} alt="JobPilot" className="w-6 h-6 object-contain" />
             <span className="font-bold text-sm hidden sm:inline">JobPilot</span>
           </Link>
@@ -94,10 +97,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </DropdownMenu>
           </nav>
         </div>
+
+        {/* Check ATS Score button — right side of header */}
+        <Button
+          variant="hero-outline"
+          size="sm"
+          onClick={() => setAtsOpen(true)}
+          className="shrink-0 text-xs sm:text-sm gap-1.5"
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span className="hidden sm:inline">Check ATS Score</span>
+          <span className="sm:hidden">ATS</span>
+        </Button>
       </header>
-      <main className="flex-1">
+
+      <main className="flex-1 overflow-x-hidden">
         {children}
       </main>
+
+      <ATSScoreChecker open={atsOpen} onOpenChange={setAtsOpen} />
     </div>
   );
 }
