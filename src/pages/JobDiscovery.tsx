@@ -548,7 +548,7 @@ const JobDiscovery = () => {
         {/* Results */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Job list */}
-          <div className={`space-y-3 ${selectedJob ? "lg:col-span-2" : "lg:col-span-5"}`}>
+          <div className={`space-y-3 min-w-0 ${selectedJob ? "lg:col-span-2" : "lg:col-span-5"}`}>
             <AnimatePresence>
               {visibleJobs.length === 0 && !loading ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-10 text-center">
