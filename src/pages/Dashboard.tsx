@@ -57,8 +57,21 @@ const Dashboard = () => {
     fetchData();
   }, [user]);
 
+  // Simple deterministic ATS health from resume text
+  const resumeHealth = useMemo(() => {
+    if (!profile?.headline && skills.length === 0) return null;
+    let score = 30; // base
+    if (profile?.full_name) score += 10;
+    if (profile?.headline) score += 10;
+    if (skills.length >= 3) score += 15;
+    if (skills.length >= 8) score += 10;
+    if (resumeCount > 0) score += 15;
+    if (optimizedResumes.length > 0) score += 10;
+    return Math.min(100, score);
+  }, [profile, skills, resumeCount, optimizedResumes]);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <div className="container mx-auto px-4 py-8">
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
