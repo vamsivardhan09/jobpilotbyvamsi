@@ -490,74 +490,58 @@ const JobDiscovery = () => {
 
         {/* Filters */}
         {allJobs.length > 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
-            {/* Score filters */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 space-y-3">
+            {/* Score filters — horizontal scroll on mobile */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
               <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
               {(["all", "high", "medium", "stretch"] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => { setFilter(f); setVisibleCount(15); }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
                     filter === f
                       ? "bg-primary/10 text-primary border-primary/30"
                       : "bg-secondary text-muted-foreground border-border/50 hover:border-primary/20"
                   }`}
                 >
-                  {f === "all" ? `All (${allJobs.length})` : f === "high" ? "High Match (80+)" : f === "medium" ? "Medium (60-79)" : "Stretch (<60)"}
+                  {f === "all" ? `All (${allJobs.length})` : f === "high" ? "80+" : f === "medium" ? "60-79" : "<60"}
                 </button>
               ))}
             </div>
 
-            {/* Location dropdown */}
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+            {/* Dropdowns — wrap on mobile */}
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={locationFilter}
                 onChange={(e) => { setLocationFilter(e.target.value); setVisibleCount(15); }}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border/50 bg-secondary text-foreground focus:outline-none focus:border-primary/30 cursor-pointer"
               >
                 {locationOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Experience dropdown */}
-            <div className="flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-muted-foreground shrink-0" />
               <select
                 value={experienceFilter}
                 onChange={(e) => { handleExperienceChange(e.target.value); setVisibleCount(15); }}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border/50 bg-secondary text-foreground focus:outline-none focus:border-primary/30 cursor-pointer"
               >
                 {experienceOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Work type dropdown */}
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
               <select
                 value={workTypeFilter}
                 onChange={(e) => { handleWorkTypeChange(e.target.value); setVisibleCount(15); }}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 bg-secondary text-foreground transition-colors hover:border-primary/20 focus:border-primary/30 focus:outline-none appearance-none cursor-pointer pr-7"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border/50 bg-secondary text-foreground focus:outline-none focus:border-primary/30 cursor-pointer"
               >
                 {workTypeOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
+              <span className="text-xs text-muted-foreground whitespace-nowrap ml-auto">
+                {displayJobs.length} result{displayJobs.length !== 1 ? "s" : ""}
+              </span>
             </div>
-
-            {/* Result count */}
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {displayJobs.length} result{displayJobs.length !== 1 ? "s" : ""}
-            </span>
           </motion.div>
         )}
 
