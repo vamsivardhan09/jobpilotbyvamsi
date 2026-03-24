@@ -99,9 +99,30 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top matches */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-6 lg:col-span-2">
+        {/* Resume Health + Top Matches row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Resume Health Widget */}
+          {resumeHealth !== null && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass rounded-xl p-5">
+              <h2 className="text-xs text-muted-foreground uppercase tracking-wider mb-3 font-medium">Resume Health</h2>
+              <div className="flex items-center gap-4">
+                <div className={`text-3xl font-black ${resumeHealth >= 80 ? "text-success" : resumeHealth >= 60 ? "text-warning" : "text-destructive"}`}>
+                  {resumeHealth}%
+                </div>
+                <div className="flex-1">
+                  <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-1000 ${resumeHealth >= 80 ? "bg-success" : resumeHealth >= 60 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${resumeHealth}%` }} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    {resumeHealth >= 80 ? "Looking great!" : resumeHealth >= 60 ? "Good — add more skills" : "Upload resume & add details"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Top matches — spans remaining cols */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className={`glass rounded-xl p-6 ${resumeHealth !== null ? "lg:col-span-2" : "lg:col-span-3"}`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold">Top Job Matches</h2>
               {topMatches.length > 0 && (
