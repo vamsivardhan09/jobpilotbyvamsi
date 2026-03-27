@@ -1,9 +1,9 @@
 import logoImg from "@/assets/jobpilot-logo.png";
 import { useState } from "react";
 import {
-  FileSearch, Sparkles, Target, User, Bookmark,
-  MoreHorizontal, LogOut, BarChart3, Mic, Wrench,
-  ChevronDown, Zap,
+  FileSearch, Sparkles, Target, User,
+  LogOut, BarChart3, Mic, Wrench,
+  ChevronDown,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { ATSScoreChecker } from "@/components/ATSScoreChecker";
+import BottomNav from "@/components/BottomNav";
 
 const primaryNav = [
   { title: "Analyze Resume", url: "/upload", icon: FileSearch },
@@ -44,40 +45,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col w-full">
-      <header className="h-14 flex items-center justify-between border-b border-border/30 glass sticky top-0 z-50 px-3 sm:px-5">
-        {/* Left: Logo */}
+      {/* Top header — hidden on mobile, visible on md+ */}
+      <header className="h-14 hidden md:flex items-center justify-between border-b border-border/30 glass sticky top-0 z-50 px-5">
         <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
           <img src={logoImg} alt="JobPilot" className="w-6 h-6 object-contain" />
-          <span className="font-bold text-sm hidden sm:inline">JobPilot</span>
+          <span className="font-bold text-sm">JobPilot</span>
         </Link>
 
-        {/* Center: Main nav */}
-        <nav className="flex items-center gap-0.5 sm:gap-1">
+        <nav className="flex items-center gap-1">
           {primaryNav.map((item) => (
             <Button
               key={item.url}
               variant={isActive(item.url) ? "default" : "ghost"}
               size="sm"
               asChild
-              className={cn(
-                "text-xs sm:text-sm gap-1 sm:gap-1.5 px-2 sm:px-3",
-                isActive(item.url) && "shadow-sm"
-              )}
+              className={cn("text-sm gap-1.5 px-3", isActive(item.url) && "shadow-sm")}
             >
               <Link to={item.url}>
                 <item.icon className="w-4 h-4" />
-                <span className="hidden md:inline">{item.title}</span>
+                <span>{item.title}</span>
               </Link>
             </Button>
           ))}
 
-          {/* Career Tools dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-xs sm:text-sm gap-1 sm:gap-1.5 px-2 sm:px-3">
+              <Button variant="ghost" size="sm" className="text-sm gap-1.5 px-3">
                 <Wrench className="w-4 h-4" />
-                <span className="hidden md:inline">Career Tools</span>
-                <ChevronDown className="w-3 h-3 hidden md:block" />
+                <span>Career Tools</span>
+                <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" className="w-52">
@@ -85,11 +81,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuItem
                   key={item.title}
                   onClick={() => {
-                    if (item.action === "ats") {
-                      setAtsOpen(true);
-                    } else {
-                      navigate(item.url);
-                    }
+                    if (item.action === "ats") setAtsOpen(true);
+                    else navigate(item.url);
                   }}
                   className={cn(
                     "flex items-center gap-2 cursor-pointer",
@@ -104,14 +97,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </DropdownMenu>
         </nav>
 
-        {/* Right: Profile + actions */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="text-xs sm:text-sm gap-1 px-2 sm:px-3 hidden sm:inline-flex"
-          >
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="ghost" size="sm" asChild className="text-sm gap-1 px-3">
             <Link to="/profile">
               <User className="w-4 h-4" />
               <span className="hidden lg:inline">My Profile</span>
@@ -125,12 +112,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild className="sm:hidden">
-                <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
-                  <User className="w-4 h-4" />
-                  <span>My Profile</span>
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
                   <BarChart3 className="w-4 h-4" />
@@ -147,9 +128,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      <main className="flex-1 overflow-x-hidden">
+      {/* Mobile top bar — minimal */}
+      <header className="h-12 flex md:hidden items-center justify-between border-b border-border/30 glass sticky top-0 z-50 px-3">
+        <Link to="/dashboard" className="flex items-center gap-2">
+          <img src={logoImg} alt="JobPilot" className="w-5 h-5 object-contain" />
+          <span className="font-bold text-sm">JobPilot</span>
+        </Link>
+        <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => setAtsOpen(true)}>
+          <BarChart3 className="w-4 h-4 text-primary" />
+        </Button>
+      </header>
+
+      <main className="flex-1 overflow-x-hidden pb-20 md:pb-0">
         {children}
       </main>
+
+      {/* Bottom nav — mobile only */}
+      <BottomNav />
 
       <ATSScoreChecker open={atsOpen} onOpenChange={setAtsOpen} />
     </div>
