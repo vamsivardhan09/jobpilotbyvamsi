@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Target } from "lucide-react";
+import { ArrowRight, BarChart3, Target, Sparkles, Users, CheckCircle, TrendingUp } from "lucide-react";
 
 export const HeroSection = () => {
   return (
@@ -21,7 +21,7 @@ export const HeroSection = () => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-8"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            AI-Powered Career Intelligence
+            Trusted by 10,000+ job seekers worldwide
           </motion.div>
 
           {/* Headline */}
@@ -31,9 +31,9 @@ export const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
           >
-            Your AI recruiter
+            Your AI Career Copilot
             <br />
-            <span className="text-gradient">finds the perfect job</span>
+            <span className="text-gradient">Get Hired Faster</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -43,8 +43,8 @@ export const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Upload your resume. Our AI scans the entire internet, matches you with
-            high-compatibility jobs, and generates tailored resumes — automatically.
+            Analyze your resume, optimize for any job, and discover high-match
+            opportunities — instantly.
           </motion.p>
 
           {/* CTA */}
@@ -56,34 +56,38 @@ export const HeroSection = () => {
           >
             <Button variant="hero" size="lg" className="text-base px-8 h-12" asChild>
               <Link to="/register">
-                Start Free <ArrowRight className="w-4 h-4 ml-1" />
+                Check My Resume Score <BarChart3 className="w-4 h-4 ml-1" />
               </Link>
             </Button>
             <Button variant="hero-outline" size="lg" className="text-base px-8 h-12" asChild>
-              <a href="#how-it-works">See How It Works</a>
+              <Link to="/register">
+                Find Matching Jobs <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
             </Button>
           </motion.div>
 
-          {/* Stats */}
+          {/* Social proof stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto"
+            className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto"
           >
             {[
-              { value: "10K+", label: "Jobs Matched" },
-              { value: "95%", label: "Match Accuracy" },
-              { value: "3x", label: "Faster Hiring" },
+              { icon: Users, value: "10K+", label: "Active Users" },
+              { icon: CheckCircle, value: "95%", label: "ATS Accuracy" },
+              { icon: TrendingUp, value: "3x", label: "Faster Hiring" },
+              { icon: Target, value: "50K+", label: "Jobs Matched" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
+                <stat.icon className="w-4 h-4 mx-auto mb-1 text-primary/60" />
                 <div className="text-2xl sm:text-3xl font-bold text-gradient">{stat.value}</div>
                 <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
               </div>
             ))}
           </motion.div>
 
-          {/* Floating cards */}
+          {/* Feature preview cards */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -92,22 +96,22 @@ export const HeroSection = () => {
           >
             <div className="glass rounded-2xl p-6 max-w-3xl mx-auto">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FloatingCard
-                  icon={<Target className="w-5 h-5 text-primary" />}
-                  title="Smart Matching"
-                  description="AI compares your skills against job requirements"
+                <FeatureCard
+                  icon={<BarChart3 className="w-5 h-5 text-primary" />}
+                  title="ATS Score Analysis"
+                  description="Real scoring based on keywords, formatting & structure"
                   delay={0.7}
                 />
-                <FloatingCard
-                  icon={<Zap className="w-5 h-5 text-accent" />}
-                  title="Instant Analysis"
-                  description="Get compatibility scores in seconds"
+                <FeatureCard
+                  icon={<Sparkles className="w-5 h-5 text-accent" />}
+                  title="Smart Optimization"
+                  description="Job-specific resume tailoring with one click"
                   delay={0.8}
                 />
-                <FloatingCard
-                  icon={<Sparkles className="w-5 h-5 text-success" />}
-                  title="Resume Optimizer"
-                  description="Generate tailored resumes per job"
+                <FeatureCard
+                  icon={<Target className="w-5 h-5 text-success" />}
+                  title="Opportunity Matching"
+                  description="Multi-source job search with match scoring"
                   delay={0.9}
                 />
               </div>
@@ -119,7 +123,7 @@ export const HeroSection = () => {
   );
 };
 
-const FloatingCard = ({
+const FeatureCard = ({
   icon,
   title,
   description,

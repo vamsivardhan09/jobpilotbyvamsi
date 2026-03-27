@@ -1,8 +1,9 @@
 import logoImg from "@/assets/jobpilot-logo.png";
 import { useState } from "react";
 import {
-  LayoutDashboard, Upload, Target, Sparkles, Mic, User,
-  MoreHorizontal, LogOut, BarChart3,
+  FileSearch, Sparkles, Target, User, Bookmark,
+  MoreHorizontal, LogOut, BarChart3, Mic, Wrench,
+  ChevronDown, Zap,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -18,15 +19,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ATSScoreChecker } from "@/components/ATSScoreChecker";
 
 const primaryNav = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Upload", url: "/upload", icon: Upload },
-  { title: "Jobs", url: "/jobs", icon: Target },
+  { title: "Analyze Resume", url: "/upload", icon: FileSearch },
+  { title: "Optimize for Job", url: "/ats-optimizer", icon: Sparkles },
+  { title: "Find Opportunities", url: "/jobs", icon: Target },
 ];
 
-const moreNav = [
-  { title: "ATS Optimizer", url: "/ats-optimizer", icon: Sparkles },
+const careerTools = [
+  { title: "ATS Score Checker", url: "/ats-score", icon: BarChart3, action: "ats" },
+  { title: "Resume Builder", url: "/dashboard", icon: Wrench },
   { title: "Mock Interview", url: "/interview", icon: Mic },
-  { title: "Profile", url: "/profile", icon: User },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -43,72 +44,107 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col w-full">
-      <header className="h-14 flex items-center justify-between border-b border-border/30 glass sticky top-0 z-50 px-4">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <Link to="/dashboard" className="flex items-center gap-2 mr-1 sm:mr-3 shrink-0">
-            <img src={logoImg} alt="JobPilot" className="w-6 h-6 object-contain" />
-            <span className="font-bold text-sm hidden sm:inline">JobPilot</span>
-          </Link>
+      <header className="h-14 flex items-center justify-between border-b border-border/30 glass sticky top-0 z-50 px-3 sm:px-5">
+        {/* Left: Logo */}
+        <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
+          <img src={logoImg} alt="JobPilot" className="w-6 h-6 object-contain" />
+          <span className="font-bold text-sm hidden sm:inline">JobPilot</span>
+        </Link>
 
-          <nav className="flex items-center gap-0.5 sm:gap-1">
-            {primaryNav.map((item) => (
-              <Button
-                key={item.url}
-                variant={isActive(item.url) ? "default" : "ghost"}
-                size="sm"
-                asChild
-                className={cn(
-                  "text-xs sm:text-sm gap-1 sm:gap-1.5 px-2 sm:px-3",
-                  isActive(item.url) && "shadow-sm"
-                )}
-              >
-                <Link to={item.url}>
-                  <item.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{item.title}</span>
-                </Link>
+        {/* Center: Main nav */}
+        <nav className="flex items-center gap-0.5 sm:gap-1">
+          {primaryNav.map((item) => (
+            <Button
+              key={item.url}
+              variant={isActive(item.url) ? "default" : "ghost"}
+              size="sm"
+              asChild
+              className={cn(
+                "text-xs sm:text-sm gap-1 sm:gap-1.5 px-2 sm:px-3",
+                isActive(item.url) && "shadow-sm"
+              )}
+            >
+              <Link to={item.url}>
+                <item.icon className="w-4 h-4" />
+                <span className="hidden md:inline">{item.title}</span>
+              </Link>
+            </Button>
+          ))}
+
+          {/* Career Tools dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs sm:text-sm gap-1 sm:gap-1.5 px-2 sm:px-3">
+                <Wrench className="w-4 h-4" />
+                <span className="hidden md:inline">Career Tools</span>
+                <ChevronDown className="w-3 h-3 hidden md:block" />
               </Button>
-            ))}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs sm:text-sm gap-1 sm:gap-1.5 px-2 sm:px-3">
-                  <MoreHorizontal className="w-4 h-4" />
-                  <span className="hidden sm:inline">More</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {moreNav.map((item) => (
-                  <DropdownMenuItem key={item.url} asChild>
-                    <Link to={item.url} className={cn(
-                      "flex items-center gap-2 cursor-pointer",
-                      isActive(item.url) && "font-medium text-primary"
-                    )}>
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer text-destructive">
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-52">
+              {careerTools.map((item) => (
+                <DropdownMenuItem
+                  key={item.title}
+                  onClick={() => {
+                    if (item.action === "ats") {
+                      setAtsOpen(true);
+                    } else {
+                      navigate(item.url);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    isActive(item.url) && "font-medium text-primary"
+                  )}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.title}</span>
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
-        </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </nav>
 
-        {/* Check ATS Score button — right side of header */}
-        <Button
-          variant="hero-outline"
-          size="sm"
-          onClick={() => setAtsOpen(true)}
-          className="shrink-0 text-xs sm:text-sm gap-1.5"
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span className="hidden sm:inline">Check ATS Score</span>
-          <span className="sm:hidden">ATS</span>
-        </Button>
+        {/* Right: Profile + actions */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="text-xs sm:text-sm gap-1 px-2 sm:px-3 hidden sm:inline-flex"
+          >
+            <Link to="/profile">
+              <User className="w-4 h-4" />
+              <span className="hidden lg:inline">My Profile</span>
+            </Link>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full bg-primary/10">
+                <User className="w-4 h-4 text-primary" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild className="sm:hidden">
+                <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
+                  <User className="w-4 h-4" />
+                  <span>My Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 cursor-pointer text-destructive">
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <main className="flex-1 overflow-x-hidden">

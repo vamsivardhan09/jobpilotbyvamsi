@@ -19,7 +19,7 @@ export const Navbar = () => {
 
   const handleAnchorClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
-    const hash = href; // e.g. "#features"
+    const hash = href;
     if (location.pathname !== "/") {
       navigate("/" + hash);
     } else {
@@ -54,7 +54,7 @@ export const Navbar = () => {
             <Link to="/login">Sign in</Link>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <Link to="/register">Get Started</Link>
+            <Link to="/register">Check My Resume — Free</Link>
           </Button>
         </div>
 
@@ -90,7 +90,7 @@ export const Navbar = () => {
                   <Link to="/login">Sign in</Link>
                 </Button>
                 <Button variant="hero" size="sm" className="flex-1" asChild>
-                  <Link to="/register">Get Started</Link>
+                  <Link to="/register">Get Started Free</Link>
                 </Button>
               </div>
             </div>
