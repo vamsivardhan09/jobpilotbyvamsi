@@ -200,9 +200,9 @@ const JobDiscovery = () => {
     const load = async () => {
       const [skillsRes, profileRes, matchesRes, prefsRes] = await Promise.all([
         supabase.from("skills").select("*").eq("user_id", user.id),
-        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }),
-        supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
+        supabase.from("user_preferences").select("*").eq("user_id", user.id).maybeSingle(),
       ]);
       setSkills(skillsRes.data ?? []);
       setProfile(profileRes.data);
