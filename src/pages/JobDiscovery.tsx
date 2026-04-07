@@ -551,14 +551,24 @@ const JobDiscovery = () => {
           <div className={`space-y-3 min-w-0 ${selectedJob ? "lg:col-span-2" : "lg:col-span-5"}`}>
             <AnimatePresence>
               {visibleJobs.length === 0 && !loading ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-10 text-center">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-8 sm:p-10 text-center">
                   <Target className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground mb-1">
                     {savedJobs.length === 0 ? "No job matches yet" : "No jobs match this filter"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find positions matching your skills." : "Try a different filter."}
+                  <p className="text-xs text-muted-foreground mb-4">
+                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find positions matching your skills." : "Try a different filter or discover new jobs."}
                   </p>
+                  {savedJobs.length === 0 && skills.length > 0 && (
+                    <Button variant="hero" size="sm" onClick={discoverJobs} disabled={loading}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1" /> Discover Jobs Now
+                    </Button>
+                  )}
+                  {skills.length === 0 && (
+                    <Button variant="hero-outline" size="sm" asChild>
+                      <Link to="/upload">Upload Resume First</Link>
+                    </Button>
+                  )}
                 </motion.div>
               ) : (
                 visibleJobs.map((job, i) => (
