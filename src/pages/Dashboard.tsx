@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Briefcase, BarChart3, Target, FileText, TrendingUp,
-  AlertTriangle, ChevronRight, Download, Sparkles,
+  ChevronRight, Download, Sparkles,
   Flame, Trophy, Zap, ArrowRight,
 } from "lucide-react";
 
@@ -35,40 +36,47 @@ const Dashboard = () => {
   const [skills, setSkills] = useState<any[]>([]);
   const [optimizedResumes, setOptimizedResumes] = useState<any[]>([]);
   const [interviewCount, setInterviewCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [profileRes, resumeRes, matchRes, skillsRes, optimizedRes, interviewRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-        supabase.from("resumes").select("id", { count: "exact" }).eq("user_id", user.id),
-        supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }).limit(5),
-        supabase.from("skills").select("*").eq("user_id", user.id).limit(10),
-        supabase.from("optimized_resumes").select("id, created_at, job_match_id, ats_keywords, optimized_content").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
-        supabase.from("interview_sessions").select("id", { count: "exact" }).eq("user_id", user.id),
-      ]);
+      try {
+        const [profileRes, resumeRes, matchRes, skillsRes, optimizedRes, interviewRes] = await Promise.all([
+          supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+          supabase.from("resumes").select("id", { count: "exact" }).eq("user_id", user.id),
+          supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }).limit(5),
+          supabase.from("skills").select("*").eq("user_id", user.id).limit(10),
+          supabase.from("optimized_resumes").select("id, created_at, job_match_id, ats_keywords, optimized_content").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+          supabase.from("interview_sessions").select("id", { count: "exact" }).eq("user_id", user.id),
+        ]);
 
-      if (profileRes.data) setProfile(profileRes.data);
-      setResumeCount(resumeRes.count ?? 0);
-      setMatchCount(matchRes.data?.length ?? 0);
-      setTopMatches(matchRes.data ?? []);
-      setSkills(skillsRes.data ?? []);
-      setInterviewCount(interviewRes.count ?? 0);
+        if (profileRes.data) setProfile(profileRes.data);
+        setResumeCount(resumeRes.count ?? 0);
+        setMatchCount(matchRes.data?.length ?? 0);
+        setTopMatches(matchRes.data ?? []);
+        setSkills(skillsRes.data ?? []);
+        setInterviewCount(interviewRes.count ?? 0);
 
-      const optimized = optimizedRes.data ?? [];
-      if (optimized.length > 0) {
-        const jobIds = [...new Set(optimized.map((o: any) => o.job_match_id).filter(Boolean))];
-        if (jobIds.length > 0) {
-          const { data: jobs } = await supabase.from("job_matches").select("id, title, company").in("id", jobIds);
-          const jobMap = new Map((jobs ?? []).map((j: any) => [j.id, j]));
-          optimized.forEach((o: any) => {
-            const job = jobMap.get(o.job_match_id);
-            o.job_title = job?.title || "Optimized Resume";
-            o.job_company = job?.company || "";
-          });
+        const optimized = optimizedRes.data ?? [];
+        if (optimized.length > 0) {
+          const jobIds = [...new Set(optimized.map((o: any) => o.job_match_id).filter(Boolean))];
+          if (jobIds.length > 0) {
+            const { data: jobs } = await supabase.from("job_matches").select("id, title, company").in("id", jobIds);
+            const jobMap = new Map((jobs ?? []).map((j: any) => [j.id, j]));
+            optimized.forEach((o: any) => {
+              const job = jobMap.get(o.job_match_id);
+              o.job_title = job?.title || "Optimized Resume";
+              o.job_company = job?.company || "";
+            });
+          }
         }
+        setOptimizedResumes(optimized);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
       }
-      setOptimizedResumes(optimized);
     };
     fetchData();
   }, [user]);
@@ -88,37 +96,50 @@ const Dashboard = () => {
 
   const level = getLevel(resumeHealth);
 
-  // Daily tasks based on what's missing
   const dailyTasks = useMemo(() => {
     const tasks: { label: string; done: boolean; action: string }[] = [];
-    if (resumeCount === 0) tasks.push({ label: "Upload your resume", done: false, action: "/upload" });
-    else tasks.push({ label: "Upload your resume", done: true, action: "/upload" });
-    if (!profile?.headline) tasks.push({ label: "Add a headline to your profile", done: false, action: "/profile" });
-    else tasks.push({ label: "Complete your profile", done: true, action: "/profile" });
-    if (matchCount === 0) tasks.push({ label: "Discover job opportunities", done: false, action: "/jobs" });
-    else tasks.push({ label: "Explore job matches", done: true, action: "/jobs" });
-    if (interviewCount === 0) tasks.push({ label: "Try a mock interview", done: false, action: "/interview" });
-    else tasks.push({ label: "Practice interviews", done: true, action: "/interview" });
+    tasks.push({ label: "Upload your resume", done: resumeCount > 0, action: "/upload" });
+    tasks.push({ label: profile?.headline ? "Complete your profile" : "Add a headline to your profile", done: !!profile?.headline, action: "/profile" });
+    tasks.push({ label: matchCount > 0 ? "Explore job matches" : "Discover job opportunities", done: matchCount > 0, action: "/jobs" });
+    tasks.push({ label: interviewCount > 0 ? "Practice interviews" : "Try a mock interview", done: interviewCount > 0, action: "/interview" });
     return tasks.slice(0, 4);
   }, [resumeCount, profile, matchCount, interviewCount]);
 
   const completedTasks = dailyTasks.filter((t) => t.done).length;
 
-  const card = "glass rounded-2xl p-5";
+  const card = "glass rounded-2xl p-4 sm:p-5";
   const delay = (i: number) => ({ delay: i * 0.04 });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-48 w-full rounded-2xl" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         {/* Welcome + Level */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold truncate">
               {profile?.full_name ? `Hey, ${profile.full_name.split(" ")[0]} 👋` : "Welcome back 👋"}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">Let's get you hired.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
               <Trophy className={`w-3.5 h-3.5 ${level.color}`} />
               <span className={`text-xs font-semibold ${level.color}`}>{level.label}</span>
@@ -163,8 +184,8 @@ const Dashboard = () => {
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${task.done ? "bg-primary border-primary" : "border-muted-foreground/30"}`}>
                   {task.done && <span className="text-[10px] text-primary-foreground">✓</span>}
                 </div>
-                <span className={`text-sm flex-1 ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{task.label}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className={`text-sm flex-1 min-w-0 truncate ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{task.label}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
               </button>
             ))}
           </div>
@@ -201,21 +222,24 @@ const Dashboard = () => {
           {topMatches.length === 0 ? (
             <div className="text-center py-8">
               <Target className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">Upload resume to discover matches</p>
+              <p className="text-xs text-muted-foreground mb-3">Upload resume to discover matches</p>
+              <Button variant="hero-outline" size="sm" onClick={() => navigate("/jobs")}>
+                <Sparkles className="w-3.5 h-3.5 mr-1" /> Discover Jobs
+              </Button>
             </div>
           ) : (
             <div className="space-y-2">
               {topMatches.map((match) => (
-                <div key={match.id} className="flex items-center justify-between p-3 rounded-xl bg-surface-2 border border-border/20">
+                <Link key={match.id} to="/jobs" className="flex items-center justify-between p-3 rounded-xl bg-surface-2 border border-border/20 hover:border-primary/20 transition-colors">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{match.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{match.company} • {match.location}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{match.company} • {match.location}</p>
                   </div>
                   <span className={`text-sm font-bold ml-3 shrink-0 ${
                     (match.match_score ?? 0) >= 80 ? "text-success" :
                     (match.match_score ?? 0) >= 60 ? "text-warning" : "text-destructive"
                   }`}>{match.match_score}%</span>
-                </div>
+                </Link>
               ))}
             </div>
           )}
@@ -232,9 +256,9 @@ const Dashboard = () => {
                 <div key={opt.id} className="flex items-center justify-between p-3 rounded-xl bg-surface-2 border border-border/20">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{opt.job_title}</p>
-                    <p className="text-[11px] text-muted-foreground">{opt.job_company} • {new Date(opt.created_at).toLocaleDateString()}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{opt.job_company} • {new Date(opt.created_at).toLocaleDateString()}</p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/resume-preview?id=${opt.id}`)}>
+                  <Button variant="ghost" size="sm" className="shrink-0" onClick={() => navigate(`/resume-preview?id=${opt.id}`)}>
                     <Download className="w-3.5 h-3.5" />
                   </Button>
                 </div>

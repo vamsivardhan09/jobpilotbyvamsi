@@ -200,9 +200,9 @@ const JobDiscovery = () => {
     const load = async () => {
       const [skillsRes, profileRes, matchesRes, prefsRes] = await Promise.all([
         supabase.from("skills").select("*").eq("user_id", user.id),
-        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }),
-        supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
+        supabase.from("user_preferences").select("*").eq("user_id", user.id).maybeSingle(),
       ]);
       setSkills(skillsRes.data ?? []);
       setProfile(profileRes.data);
@@ -230,7 +230,7 @@ const JobDiscovery = () => {
     }
     // Save work type to user_preferences (upsert)
     const prefValue = workType === "all" ? "any" : workType;
-    const { data: existing } = await supabase.from("user_preferences").select("id").eq("user_id", user.id).single();
+    const { data: existing } = await supabase.from("user_preferences").select("id").eq("user_id", user.id).maybeSingle();
     if (existing) {
       await supabase.from("user_preferences").update({ remote_preference: prefValue }).eq("user_id", user.id);
     } else {
@@ -420,9 +420,9 @@ const JobDiscovery = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
 
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-2xl font-bold mb-2">Job Discovery</h1>
@@ -551,14 +551,24 @@ const JobDiscovery = () => {
           <div className={`space-y-3 min-w-0 ${selectedJob ? "lg:col-span-2" : "lg:col-span-5"}`}>
             <AnimatePresence>
               {visibleJobs.length === 0 && !loading ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-10 text-center">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-8 sm:p-10 text-center">
                   <Target className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground mb-1">
                     {savedJobs.length === 0 ? "No job matches yet" : "No jobs match this filter"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find positions matching your skills." : "Try a different filter."}
+                  <p className="text-xs text-muted-foreground mb-4">
+                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find positions matching your skills." : "Try a different filter or discover new jobs."}
                   </p>
+                  {savedJobs.length === 0 && skills.length > 0 && (
+                    <Button variant="hero" size="sm" onClick={discoverJobs} disabled={loading}>
+                      <Sparkles className="w-3.5 h-3.5 mr-1" /> Discover Jobs Now
+                    </Button>
+                  )}
+                  {skills.length === 0 && (
+                    <Button variant="hero-outline" size="sm" asChild>
+                      <Link to="/upload">Upload Resume First</Link>
+                    </Button>
+                  )}
                 </motion.div>
               ) : (
                 visibleJobs.map((job, i) => (
