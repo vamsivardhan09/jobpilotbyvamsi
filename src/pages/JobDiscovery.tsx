@@ -420,9 +420,9 @@ const JobDiscovery = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
 
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-2xl font-bold mb-2">Job Discovery</h1>
