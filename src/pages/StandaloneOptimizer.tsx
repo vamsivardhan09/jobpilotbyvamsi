@@ -108,9 +108,9 @@ const StandaloneOptimizer = () => {
     "text-destructive border-destructive/30 bg-destructive/10";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" /> Resume Optimization
