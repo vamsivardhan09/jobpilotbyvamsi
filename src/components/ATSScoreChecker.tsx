@@ -1,6 +1,4 @@
 import { useState, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -34,17 +32,17 @@ const ACCEPTED_TYPES = [
 // Deterministic rule-based ATS scoring — NO AI calls needed
 function calculateATSScore(text: string): ATSBreakdown {
   const lower = text.toLowerCase();
-  const words = lower.split(/\s+/);
+  const words = lower.split(/\s+/).filter(Boolean);
   const totalWords = words.length;
 
   // 1. Section completeness (20%)
   const sectionKeywords: Record<string, string[]> = {
-    "Contact Info": ["email", "phone", "linkedin", "github", "@"],
-    "Summary/Objective": ["summary", "objective", "professional summary", "about me", "profile"],
-    "Experience": ["experience", "work history", "employment", "worked at", "responsibilities"],
-    "Education": ["education", "degree", "university", "bachelor", "master", "b.tech", "b.e", "mca", "bca"],
-    "Skills": ["skills", "technical skills", "technologies", "proficient", "expertise"],
-    "Projects": ["projects", "project", "developed", "built", "implemented"],
+    "Contact Info": ["email", "phone", "linkedin", "github", "@", "contact"],
+    "Summary/Objective": ["summary", "objective", "professional summary", "about me", "profile", "career objective"],
+    "Experience": ["experience", "work history", "employment", "worked at", "responsibilities", "work experience", "professional experience"],
+    "Education": ["education", "degree", "university", "bachelor", "master", "b.tech", "b.e", "mca", "bca", "college", "school", "diploma"],
+    "Skills": ["skills", "technical skills", "technologies", "proficient", "expertise", "competencies", "tools"],
+    "Projects": ["projects", "project", "portfolio", "case study"],
   };
   const sectionsFound: string[] = [];
   const sectionsMissing: string[] = [];
@@ -54,46 +52,58 @@ function calculateATSScore(text: string): ATSBreakdown {
   }
   const completenessScore = Math.round((sectionsFound.length / Object.keys(sectionKeywords).length) * 100);
 
-  // 2. Keyword density (30%) — common ATS keywords
+  // 2. Keyword density (30%) — common ATS action verbs & terms
   const atsKeywords = [
     "managed", "developed", "designed", "implemented", "led", "created",
     "improved", "optimized", "collaborated", "delivered", "analyzed",
     "built", "deployed", "maintained", "architected", "mentored",
     "agile", "scrum", "ci/cd", "rest api", "microservices",
     "javascript", "typescript", "python", "react", "node.js",
-    "sql", "aws", "docker", "git", "linux",
+    "sql", "aws", "docker", "git", "linux", "java", "html", "css",
   ];
   const foundKeywords = atsKeywords.filter((kw) => lower.includes(kw));
-  const missingKeywords = atsKeywords
-    .filter((kw) => !lower.includes(kw))
-    .filter((kw) => ["managed", "developed", "implemented", "collaborated", "deployed", "agile", "ci/cd", "rest api"].includes(kw));
-  const keywordScore = Math.min(100, Math.round((foundKeywords.length / 12) * 100));
+  const missingImportant = [
+    "managed", "developed", "implemented", "collaborated", "deployed",
+    "agile", "ci/cd", "rest api", "led", "designed",
+  ].filter((kw) => !lower.includes(kw));
+  // Score: finding 10+ of ~34 keywords = 100%
+  const keywordScore = Math.min(100, Math.round((foundKeywords.length / 10) * 100));
 
   // 3. Formatting (20%) — measurable heuristics
   let formatScore = 100;
-  if (totalWords < 150) formatScore -= 30; // Too short
-  if (totalWords > 2000) formatScore -= 15; // Too long
+  if (totalWords < 100) formatScore -= 40;
+  else if (totalWords < 200) formatScore -= 25;
+  else if (totalWords < 300) formatScore -= 10;
+  if (totalWords > 2000) formatScore -= 15;
   if (!/\d{4}/.test(text)) formatScore -= 15; // No years/dates
-  if (text.split("\n").filter((l) => l.trim().startsWith("•") || l.trim().startsWith("-") || l.trim().startsWith("·")).length < 3) formatScore -= 20; // No bullet points
-  if (!/[A-Z][a-z]/.test(text)) formatScore -= 10; // No proper capitalization
+  const bulletLines = text.split("\n").filter((l) => /^\s*[•\-·–—\*►▪]/.test(l.trim())).length;
+  if (bulletLines < 3) formatScore -= 20;
+  else if (bulletLines < 5) formatScore -= 10;
+  if (!/[A-Z][a-z]/.test(text)) formatScore -= 10;
+  // Check for email format as sign of proper contact info
+  if (/[\w.-]+@[\w.-]+\.\w+/.test(text)) formatScore += 5;
   formatScore = Math.max(0, Math.min(100, formatScore));
 
   // 4. Skills relevance (15%)
   const techSkills = [
-    "javascript", "typescript", "python", "java", "c++", "react", "angular", "vue",
+    "javascript", "typescript", "python", "java", "c++", "c#", "react", "angular", "vue",
     "node.js", "express", "django", "flask", "spring", "sql", "nosql", "mongodb",
     "postgresql", "mysql", "aws", "azure", "gcp", "docker", "kubernetes", "git",
-    "html", "css", "tailwind", "next.js", "graphql", "redis",
+    "html", "css", "tailwind", "next.js", "graphql", "redis", "figma",
+    "machine learning", "data analysis", "tableau", "power bi", "excel",
+    "communication", "leadership", "problem solving", "teamwork",
   ];
   const foundSkills = techSkills.filter((s) => lower.includes(s));
-  const skillsScore = Math.min(100, Math.round((foundSkills.length / 8) * 100));
+  // 6+ skills = 100%
+  const skillsScore = Math.min(100, Math.round((foundSkills.length / 6) * 100));
 
   // 5. Experience clarity (15%)
-  let experienceScore = 50; // baseline
-  const hasQuantified = /\d+%|\$\d|saved|increased|reduced|improved by/i.test(text);
-  if (hasQuantified) experienceScore += 25;
-  const hasActionVerbs = ["led", "managed", "developed", "created", "built", "designed"].filter((v) => lower.includes(v)).length;
-  experienceScore += Math.min(25, hasActionVerbs * 5);
+  let experienceScore = 40; // baseline
+  const hasQuantified = /\d+\s*%|\$[\d,]+|saved|increased|reduced|improved by|grew|revenue|users|clients/i.test(text);
+  if (hasQuantified) experienceScore += 30;
+  const actionVerbs = ["led", "managed", "developed", "created", "built", "designed", "implemented", "delivered", "analyzed", "optimized"];
+  const foundActions = actionVerbs.filter((v) => lower.includes(v)).length;
+  experienceScore += Math.min(30, foundActions * 5);
   experienceScore = Math.min(100, experienceScore);
 
   // Weighted total
@@ -109,12 +119,12 @@ function calculateATSScore(text: string): ATSBreakdown {
   const suggestions: string[] = [];
   if (sectionsMissing.length > 0) suggestions.push(`Add missing sections: ${sectionsMissing.join(", ")}`);
   if (!hasQuantified) suggestions.push("Add quantified achievements (e.g., 'increased performance by 30%')");
-  if (foundSkills.length < 5) suggestions.push("Add more relevant technical skills");
-  if (missingKeywords.length > 3) suggestions.push("Use more action verbs like 'developed', 'implemented', 'deployed'");
-  if (totalWords < 200) suggestions.push("Resume seems too short — aim for 400-800 words");
-  if (text.split("\n").filter((l) => l.trim().startsWith("•") || l.trim().startsWith("-")).length < 5) {
-    suggestions.push("Use more bullet points to describe your experience");
-  }
+  if (foundSkills.length < 5) suggestions.push("Add more relevant technical skills to your resume");
+  if (missingImportant.length > 4) suggestions.push(`Use more action verbs like '${missingImportant.slice(0, 3).join("', '")}'`);
+  if (totalWords < 250) suggestions.push("Resume seems too short — aim for 400-800 words");
+  if (bulletLines < 5) suggestions.push("Use more bullet points to describe your experience clearly");
+  if (!(/[\w.-]+@[\w.-]+\.\w+/.test(text))) suggestions.push("Include your email address in the contact section");
+  if (!lower.includes("linkedin")) suggestions.push("Add your LinkedIn profile URL");
 
   return {
     keyword_score: keywordScore,
@@ -123,31 +133,85 @@ function calculateATSScore(text: string): ATSBreakdown {
     skills_score: skillsScore,
     experience_score: experienceScore,
     total: Math.min(100, Math.max(0, total)),
-    missing_keywords: missingKeywords.slice(0, 10),
-    suggestions,
+    missing_keywords: missingImportant.slice(0, 10),
+    suggestions: suggestions.slice(0, 6),
     sections_found: sectionsFound,
     sections_missing: sectionsMissing,
   };
 }
 
+// Improved PDF text extraction using multiple strategies
 async function readFileAsText(file: File): Promise<string> {
-  if (file.type === "application/pdf") {
+  if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
-    let text = "";
-    for (let i = 0; i < uint8Array.length - 1; i++) {
-      if (uint8Array[i] === 0x28) {
-        let str = "";
-        let j = i + 1;
-        while (j < uint8Array.length && uint8Array[j] !== 0x29) {
-          str += String.fromCharCode(uint8Array[j]);
-          j++;
+    const rawStr = new TextDecoder("latin1").decode(uint8Array);
+
+    // Strategy 1: Extract text between BT...ET text blocks
+    let textBlocks: string[] = [];
+    const btEtRegex = /BT\s([\s\S]*?)ET/g;
+    let btMatch;
+    while ((btMatch = btEtRegex.exec(rawStr)) !== null) {
+      const block = btMatch[1];
+      // Extract strings in parentheses (literal strings)
+      const parenRegex = /\(([^)]*)\)/g;
+      let pm;
+      while ((pm = parenRegex.exec(block)) !== null) {
+        const decoded = pm[1]
+          .replace(/\\n/g, "\n")
+          .replace(/\\r/g, "\r")
+          .replace(/\\t/g, "\t")
+          .replace(/\\\(/g, "(")
+          .replace(/\\\)/g, ")")
+          .replace(/\\\\/g, "\\");
+        if (decoded.trim().length > 0) textBlocks.push(decoded);
+      }
+      // Extract hex strings <>
+      const hexRegex = /<([0-9A-Fa-f]+)>/g;
+      let hm;
+      while ((hm = hexRegex.exec(block)) !== null) {
+        const hex = hm[1];
+        let decoded = "";
+        for (let i = 0; i < hex.length - 1; i += 2) {
+          const code = parseInt(hex.substring(i, i + 2), 16);
+          if (code >= 32 && code < 127) decoded += String.fromCharCode(code);
         }
-        if (str.length > 1 && /[a-zA-Z]/.test(str)) text += str + " ";
-        i = j;
+        if (decoded.trim().length > 0) textBlocks.push(decoded);
       }
     }
-    return text || file.text();
+    
+    let text = textBlocks.join(" ").replace(/\s+/g, " ").trim();
+    
+    // Strategy 2: Fallback — extract all parenthesized strings
+    if (text.length < 50) {
+      textBlocks = [];
+      const allParenRegex = /\(([^)]{2,})\)/g;
+      let m2;
+      while ((m2 = allParenRegex.exec(rawStr)) !== null) {
+        const s = m2[1].replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\");
+        if (/[a-zA-Z]{2,}/.test(s)) textBlocks.push(s);
+      }
+      text = textBlocks.join(" ").replace(/\s+/g, " ").trim();
+    }
+
+    // Strategy 3: Last resort — extract readable ASCII sequences
+    if (text.length < 50) {
+      const readable: string[] = [];
+      let current = "";
+      for (let i = 0; i < uint8Array.length; i++) {
+        const c = uint8Array[i];
+        if (c >= 32 && c < 127) {
+          current += String.fromCharCode(c);
+        } else {
+          if (current.length > 3 && /[a-zA-Z]{2,}/.test(current)) readable.push(current);
+          current = "";
+        }
+      }
+      if (current.length > 3) readable.push(current);
+      text = readable.join(" ").replace(/\s+/g, " ").trim();
+    }
+
+    return text;
   }
   if (file.name.endsWith(".docx")) {
     const zip = await JSZip.loadAsync(file);
@@ -183,16 +247,15 @@ export function ATSScoreChecker({ open, onOpenChange }: { open: boolean; onOpenC
     setAnalyzing(true);
     try {
       const text = await readFileAsText(file);
-      if (text.trim().length < 50) {
-        toast({ title: "Could not extract text", description: "The file may be image-based. Try a text-based PDF.", variant: "destructive" });
+      if (text.trim().length < 30) {
+        toast({ title: "Could not extract text", description: "The file may be image-based or scanned. Try a text-based PDF or DOCX.", variant: "destructive" });
         setAnalyzing(false);
         return;
       }
-      // Deterministic scoring — no API call
       const score = calculateATSScore(text);
       setResult(score);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Error analyzing file", description: err.message || "Something went wrong.", variant: "destructive" });
     } finally {
       setAnalyzing(false);
     }
@@ -210,7 +273,7 @@ export function ATSScoreChecker({ open, onOpenChange }: { open: boolean; onOpenC
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" /> ATS Score Checker
@@ -234,12 +297,12 @@ export function ATSScoreChecker({ open, onOpenChange }: { open: boolean; onOpenC
             >
               {file ? (
                 <div className="flex items-center justify-center gap-3">
-                  <FileText className="w-6 h-6 text-success" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium truncate max-w-[250px]">{file.name}</p>
+                  <FileText className="w-6 h-6 text-success shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-medium truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="text-muted-foreground hover:text-foreground shrink-0">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -297,7 +360,7 @@ export function ATSScoreChecker({ open, onOpenChange }: { open: boolean; onOpenC
                 <div className="space-y-1">
                   {result.sections_found.map((s) => (
                     <div key={s} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3 h-3 text-success" /> {s}
+                      <CheckCircle2 className="w-3 h-3 text-success shrink-0" /> {s}
                     </div>
                   ))}
                 </div>
@@ -308,7 +371,7 @@ export function ATSScoreChecker({ open, onOpenChange }: { open: boolean; onOpenC
                   <div className="space-y-1">
                     {result.sections_missing.map((s) => (
                       <div key={s} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <AlertTriangle className="w-3 h-3 text-destructive" /> {s}
+                        <AlertTriangle className="w-3 h-3 text-destructive shrink-0" /> {s}
                       </div>
                     ))}
                   </div>
