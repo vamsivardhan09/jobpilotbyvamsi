@@ -230,7 +230,7 @@ const JobDiscovery = () => {
     }
     // Save work type to user_preferences (upsert)
     const prefValue = workType === "all" ? "any" : workType;
-    const { data: existing } = await supabase.from("user_preferences").select("id").eq("user_id", user.id).single();
+    const { data: existing } = await supabase.from("user_preferences").select("id").eq("user_id", user.id).maybeSingle();
     if (existing) {
       await supabase.from("user_preferences").update({ remote_preference: prefValue }).eq("user_id", user.id);
     } else {
