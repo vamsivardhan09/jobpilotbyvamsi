@@ -291,7 +291,7 @@ const JobDiscovery = () => {
       }
 
       if (discovered.length === 0) {
-        toast({ title: "No matches found", description: "Try updating your resume with more relevant skills.", variant: "default" });
+        toast({ title: "No fresh jobs found", description: "Fetching latest jobs, try again shortly.", variant: "default" });
         setLoading(false);
         return;
       }
@@ -557,7 +557,7 @@ const JobDiscovery = () => {
                     {savedJobs.length === 0 ? "No job matches yet" : "No jobs match this filter"}
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find positions matching your skills." : "Try a different filter or discover new jobs."}
+                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find fresh positions posted today." : "Try a different filter or discover new jobs."}
                   </p>
                   {savedJobs.length === 0 && skills.length > 0 && (
                     <Button variant="hero" size="sm" onClick={discoverJobs} disabled={loading}>

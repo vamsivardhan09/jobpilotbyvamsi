@@ -23,11 +23,11 @@ function buildSearchQueries(skillNames: string[], preferredRoles: string[], loca
     : workType === "onsite" ? "on-site office"
     : "";
 
-  // Role-based queries
+  // Role-based queries — append date filter for freshness
   if (preferredRoles?.length) {
     for (const role of preferredRoles.slice(0, 2)) {
       queries.push(`"${role}" hiring ${loc} ${expTag} ${workTag} site:linkedin.com/jobs/view`.trim());
-      queries.push(`"${role}" ${expTag} ${workTag} apply now ${loc} 2026`.trim());
+      queries.push(`"${role}" ${expTag} ${workTag} apply now ${loc}`.trim());
     }
   }
 
@@ -55,7 +55,7 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
       "X-API-KEY": serperKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ q: query, num: 10 }),
+    body: JSON.stringify({ q: query, num: 10, tbs: "qdr:d2" }),
   });
 
   if (!response.ok) {
