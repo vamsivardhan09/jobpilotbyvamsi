@@ -55,7 +55,7 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
       "X-API-KEY": serperKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ q: query, num: 10 }),
+    body: JSON.stringify({ q: query, num: 10, tbs: "qdr:d2" }),
   });
 
   if (!response.ok) {
