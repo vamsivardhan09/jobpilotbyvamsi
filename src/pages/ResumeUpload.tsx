@@ -342,7 +342,7 @@ const ResumeUpload = () => {
             )}
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button variant="hero" className="flex-1" onClick={() => navigate("/jobs")}>
                 <Search className="w-4 h-4 mr-2" /> Discover Jobs
               </Button>
