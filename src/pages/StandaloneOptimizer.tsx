@@ -145,8 +145,8 @@ const StandaloneOptimizer = () => {
 
             {/* Job description input */}
             <div className="glass rounded-xl p-6">
-              <label className="text-sm font-medium mb-3 block">
-                Paste the Job Description
+            <label className="text-sm font-medium mb-3 block">
+                Paste the Job Description <span className="text-destructive">*</span>
               </label>
               <Textarea
                 placeholder="Paste the full job description here... Include responsibilities, qualifications, and requirements for the best optimization."
