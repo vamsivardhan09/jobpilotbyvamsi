@@ -31,6 +31,41 @@ type JobMatch = {
 
 const isLinkedInUrl = (url?: string) => url?.toLowerCase().includes("linkedin.com");
 
+// Sources that frequently expire / require login → show fallback "How to Apply" steps
+const needsApplyFallback = (url?: string, source?: string) => {
+  if (!url) return true;
+  const u = url.toLowerCase();
+  const s = (source || "").toLowerCase();
+  return (
+    u.includes("linkedin.com") ||
+    u.includes("naukri.com") ||
+    u.includes("indeed.") ||
+    u.includes("glassdoor") ||
+    s === "linkedin" || s === "naukri" || s === "indeed" || s === "glassdoor"
+  );
+};
+
+const sourceLabel = (url?: string, source?: string) => {
+  if (source) return source;
+  if (!url) return "the job board";
+  const u = url.toLowerCase();
+  if (u.includes("linkedin")) return "LinkedIn";
+  if (u.includes("naukri")) return "Naukri";
+  if (u.includes("indeed")) return "Indeed";
+  if (u.includes("glassdoor")) return "Glassdoor";
+  return "the job board";
+};
+
+const sourceSearchUrl = (url?: string) => {
+  if (!url) return "https://www.google.com/search";
+  const u = url.toLowerCase();
+  if (u.includes("linkedin")) return "https://www.linkedin.com/jobs/";
+  if (u.includes("naukri")) return "https://www.naukri.com/";
+  if (u.includes("indeed")) return "https://www.indeed.com/";
+  if (u.includes("glassdoor")) return "https://www.glassdoor.com/Job/";
+  return url;
+};
+
 const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolean }) => {
   const [copied, setCopied] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
