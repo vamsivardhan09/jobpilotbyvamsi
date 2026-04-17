@@ -69,7 +69,9 @@ const sourceSearchUrl = (url?: string) => {
 const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolean }) => {
   const [copied, setCopied] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const isLinkedIn = isLinkedInUrl(job.apply_url);
+  const showFallback = needsApplyFallback(job.apply_url, job.source);
+  const sLabel = sourceLabel(job.apply_url, job.source);
+  const sUrl = sourceSearchUrl(job.apply_url);
 
   const searchQuery = `${job.title} ${job.company}`.trim();
 
@@ -82,7 +84,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
 
   if (!job.apply_url) return null;
 
-  if (!isLinkedIn) {
+  if (!showFallback) {
     return (
       <a
         href={job.apply_url}
@@ -106,7 +108,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
       </button>
       {showGuide && (
         <div className="mt-2 p-3 rounded-lg bg-primary/5 border border-primary/10 space-y-2" onClick={(e) => e.stopPropagation()}>
-          <p className="text-[11px] text-muted-foreground font-medium">LinkedIn may block direct links. Follow these steps:</p>
+          <p className="text-[11px] text-muted-foreground font-medium">{sLabel} listings may expire or require login. Apply manually:</p>
           <div className="space-y-1.5">
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">1</span>
@@ -123,7 +125,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
             </div>
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
-              <p className="text-[11px] text-foreground">Go to <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener noreferrer" className="text-primary underline">LinkedIn Jobs</a> and paste in the search bar</p>
+              <p className="text-[11px] text-foreground">Go to <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">{sLabel}</a>, paste in search and filter to <strong>last 24 hours</strong></p>
             </div>
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
