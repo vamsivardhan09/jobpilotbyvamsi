@@ -31,10 +31,47 @@ type JobMatch = {
 
 const isLinkedInUrl = (url?: string) => url?.toLowerCase().includes("linkedin.com");
 
+// Sources that frequently expire / require login → show fallback "How to Apply" steps
+const needsApplyFallback = (url?: string, source?: string) => {
+  if (!url) return true;
+  const u = url.toLowerCase();
+  const s = (source || "").toLowerCase();
+  return (
+    u.includes("linkedin.com") ||
+    u.includes("naukri.com") ||
+    u.includes("indeed.") ||
+    u.includes("glassdoor") ||
+    s === "linkedin" || s === "naukri" || s === "indeed" || s === "glassdoor"
+  );
+};
+
+const sourceLabel = (url?: string, source?: string) => {
+  if (source) return source;
+  if (!url) return "the job board";
+  const u = url.toLowerCase();
+  if (u.includes("linkedin")) return "LinkedIn";
+  if (u.includes("naukri")) return "Naukri";
+  if (u.includes("indeed")) return "Indeed";
+  if (u.includes("glassdoor")) return "Glassdoor";
+  return "the job board";
+};
+
+const sourceSearchUrl = (url?: string) => {
+  if (!url) return "https://www.google.com/search";
+  const u = url.toLowerCase();
+  if (u.includes("linkedin")) return "https://www.linkedin.com/jobs/";
+  if (u.includes("naukri")) return "https://www.naukri.com/";
+  if (u.includes("indeed")) return "https://www.indeed.com/";
+  if (u.includes("glassdoor")) return "https://www.glassdoor.com/Job/";
+  return url;
+};
+
 const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolean }) => {
   const [copied, setCopied] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const isLinkedIn = isLinkedInUrl(job.apply_url);
+  const showFallback = needsApplyFallback(job.apply_url, job.source);
+  const sLabel = sourceLabel(job.apply_url, job.source);
+  const sUrl = sourceSearchUrl(job.apply_url);
 
   const searchQuery = `${job.title} ${job.company}`.trim();
 
@@ -47,7 +84,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
 
   if (!job.apply_url) return null;
 
-  if (!isLinkedIn) {
+  if (!showFallback) {
     return (
       <a
         href={job.apply_url}
@@ -71,7 +108,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
       </button>
       {showGuide && (
         <div className="mt-2 p-3 rounded-lg bg-primary/5 border border-primary/10 space-y-2" onClick={(e) => e.stopPropagation()}>
-          <p className="text-[11px] text-muted-foreground font-medium">LinkedIn may block direct links. Follow these steps:</p>
+          <p className="text-[11px] text-muted-foreground font-medium">{sLabel} listings may expire or require login. Apply manually:</p>
           <div className="space-y-1.5">
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">1</span>
@@ -88,7 +125,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
             </div>
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
-              <p className="text-[11px] text-foreground">Go to <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener noreferrer" className="text-primary underline">LinkedIn Jobs</a> and paste in the search bar</p>
+              <p className="text-[11px] text-foreground">Go to <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">{sLabel}</a>, paste in search and filter to <strong>last 24 hours</strong></p>
             </div>
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
@@ -111,7 +148,9 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
 
 const ApplySection = ({ job }: { job: JobMatch }) => {
   const [copied, setCopied] = useState(false);
-  const isLinkedIn = isLinkedInUrl(job.apply_url);
+  const showFallback = needsApplyFallback(job.apply_url, job.source);
+  const sLabel = sourceLabel(job.apply_url, job.source);
+  const sUrl = sourceSearchUrl(job.apply_url);
   const searchQuery = `${job.title} ${job.company}`.trim();
 
   const handleCopy = async (text: string) => {
@@ -122,11 +161,11 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
 
   return (
     <div className="space-y-3">
-      {isLinkedIn && job.apply_url && (
+      {showFallback && job.apply_url && (
         <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-warning" />
-            <p className="text-xs font-medium text-foreground">LinkedIn may block direct links</p>
+            <p className="text-xs font-medium text-foreground">{sLabel} links may expire or require login</p>
           </div>
           <p className="text-xs text-muted-foreground">Follow these steps to apply manually:</p>
           <div className="space-y-2.5">
@@ -145,7 +184,7 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
             </div>
             <div className="flex items-start gap-2.5">
               <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">2</span>
-              <p className="text-xs text-foreground">Open <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">LinkedIn Jobs</a> and paste it in the search bar</p>
+              <p className="text-xs text-foreground">Open <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">{sLabel}</a>, paste in search, and filter <strong>last 24 hours</strong></p>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">3</span>
@@ -155,11 +194,11 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         {job.apply_url && (
           <Button variant="hero" className="flex-1" asChild>
             <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4 mr-2" /> {isLinkedIn ? "Try Direct Link" : "Apply Now"}
+              <ExternalLink className="w-4 h-4 mr-2" /> {showFallback ? "Try Direct Link" : "Apply Now"}
             </a>
           </Button>
         )}

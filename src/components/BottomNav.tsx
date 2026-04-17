@@ -1,11 +1,11 @@
-import { Home, FileSearch, Briefcase, Mic, User } from "lucide-react";
+import { Home, Sparkles, Briefcase, Mic, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const tabs = [
   { label: "Home", icon: Home, path: "/dashboard" },
-  { label: "Analyze", icon: FileSearch, path: "/upload" },
+  { label: "Tailor", icon: Sparkles, path: "/ats-optimizer" },
   { label: "Jobs", icon: Briefcase, path: "/jobs" },
   { label: "Practice", icon: Mic, path: "/interview" },
   { label: "Profile", icon: User, path: "/profile" },
