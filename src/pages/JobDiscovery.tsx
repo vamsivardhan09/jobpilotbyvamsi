@@ -148,7 +148,9 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
 
 const ApplySection = ({ job }: { job: JobMatch }) => {
   const [copied, setCopied] = useState(false);
-  const isLinkedIn = isLinkedInUrl(job.apply_url);
+  const showFallback = needsApplyFallback(job.apply_url, job.source);
+  const sLabel = sourceLabel(job.apply_url, job.source);
+  const sUrl = sourceSearchUrl(job.apply_url);
   const searchQuery = `${job.title} ${job.company}`.trim();
 
   const handleCopy = async (text: string) => {
@@ -159,11 +161,11 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
 
   return (
     <div className="space-y-3">
-      {isLinkedIn && job.apply_url && (
+      {showFallback && job.apply_url && (
         <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-warning" />
-            <p className="text-xs font-medium text-foreground">LinkedIn may block direct links</p>
+            <p className="text-xs font-medium text-foreground">{sLabel} links may expire or require login</p>
           </div>
           <p className="text-xs text-muted-foreground">Follow these steps to apply manually:</p>
           <div className="space-y-2.5">
@@ -182,7 +184,7 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
             </div>
             <div className="flex items-start gap-2.5">
               <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">2</span>
-              <p className="text-xs text-foreground">Open <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">LinkedIn Jobs</a> and paste it in the search bar</p>
+              <p className="text-xs text-foreground">Open <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">{sLabel}</a>, paste in search, and filter <strong>last 24 hours</strong></p>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">3</span>
@@ -192,11 +194,11 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         {job.apply_url && (
           <Button variant="hero" className="flex-1" asChild>
             <a href={job.apply_url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4 mr-2" /> {isLinkedIn ? "Try Direct Link" : "Apply Now"}
+              <ExternalLink className="w-4 h-4 mr-2" /> {showFallback ? "Try Direct Link" : "Apply Now"}
             </a>
           </Button>
         )}
