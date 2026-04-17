@@ -291,7 +291,7 @@ const JobDiscovery = () => {
       }
 
       if (discovered.length === 0) {
-        toast({ title: "No fresh jobs found", description: "Fetching latest jobs, try again shortly.", variant: "default" });
+        toast({ title: "No recent jobs found", description: "No jobs posted in the last 2 days. Try again shortly.", variant: "default" });
         setLoading(false);
         return;
       }
@@ -554,10 +554,10 @@ const JobDiscovery = () => {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass rounded-xl p-8 sm:p-10 text-center">
                   <Target className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground mb-1">
-                    {savedJobs.length === 0 ? "No job matches yet" : "No jobs match this filter"}
+                    {savedJobs.length === 0 ? "No recent jobs found" : "No jobs match this filter"}
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find fresh positions posted today." : "Try a different filter or discover new jobs."}
+                    {savedJobs.length === 0 ? "Click 'Discover Jobs' to find positions posted in the last 2 days." : "Try a different filter or discover new jobs."}
                   </p>
                   {savedJobs.length === 0 && skills.length > 0 && (
                     <Button variant="hero" size="sm" onClick={discoverJobs} disabled={loading}>

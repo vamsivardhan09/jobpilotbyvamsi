@@ -55,6 +55,7 @@ async function searchJobs(query: string, serperKey: string): Promise<any[]> {
       "X-API-KEY": serperKey,
       "Content-Type": "application/json",
     },
+    // qdr:d2 = restrict to last 2 days for fresh listings
     body: JSON.stringify({ q: query, num: 10, tbs: "qdr:d2" }),
   });
 
