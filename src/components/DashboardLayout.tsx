@@ -19,8 +19,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center gap-2">
               <SidebarTrigger className="shrink-0 hidden md:flex" />
               <Link to="/dashboard" className="flex items-center gap-2 md:hidden">
-                <img src={logoImg} alt="JobPilot" className="w-5 h-5 object-contain" />
-                <span className="font-bold text-sm">JobPilot</span>
+                <img src={logoImg} alt="AnyJobs" className="w-5 h-5 object-contain" />
+                <span className="font-bold text-sm">AnyJobs</span>
               </Link>
             </div>
           </header>

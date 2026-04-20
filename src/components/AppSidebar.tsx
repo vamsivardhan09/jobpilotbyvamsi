@@ -43,8 +43,8 @@ export function AppSidebar() {
         {/* Logo */}
         <div className={`flex items-center gap-2 px-3 py-4 ${collapsed ? "justify-center" : ""}`}>
           <Link to="/dashboard" className="flex items-center gap-2">
-            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain shrink-0" />
-            {!collapsed && <span className="font-bold text-sm">JobPilot</span>}
+            <img src={logoImg} alt="AnyJobs" className="w-7 h-7 object-contain shrink-0" />
+            {!collapsed && <span className="font-bold text-sm">AnyJobs</span>}
           </Link>
         </div>
 

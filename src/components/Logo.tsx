@@ -16,8 +16,8 @@ export const Logo = ({ size = "sm", to = "/" }: LogoProps) => {
   const s = sizeMap[size];
   return (
     <Link to={to} className={`flex items-center gap-2 font-bold ${s.text} tracking-tight`}>
-      <img src={logoImg} alt="JobPilot" className={`${s.img} object-contain`} />
-      <span>JobPilot</span>
+      <img src={logoImg} alt="AnyJobs" className={`${s.img} object-contain`} />
+      <span>AnyJobs</span>
     </Link>
   );
 };
