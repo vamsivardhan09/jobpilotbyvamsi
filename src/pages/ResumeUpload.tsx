@@ -192,9 +192,10 @@ const ResumeUpload = () => {
                   ? "border-primary/30 bg-primary/5"
                   : "border-border/50 hover:border-primary/30 hover:bg-surface-2"
               }`}
-              onClick={() => document.getElementById("file-input")?.click()}
+              onClick={() => fileInputRef.current?.click()}
             >
               <input
+                ref={fileInputRef}
                 id="file-input"
                 type="file"
                 accept=".pdf,.docx"
@@ -214,7 +215,13 @@ const ResumeUpload = () => {
                     </p>
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFile(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
                     className="text-xs text-destructive hover:underline flex items-center gap-1 mt-1"
                   >
                     <X className="w-3 h-3" /> Remove
