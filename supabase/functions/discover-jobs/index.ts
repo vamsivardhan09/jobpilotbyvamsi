@@ -164,12 +164,51 @@ function extractSource(url: string): string {
   try { return new URL(url).hostname.replace("www.", ""); } catch { return "Company"; }
 }
 
+function isAllowedSource(source: string): boolean {
+  const normalized = source.toLowerCase();
+  return ["linkedin", "indeed", "naukri"].includes(normalized) || normalized.includes("career") || normalized.includes("jobs.") || normalized.includes("workday") || normalized.includes("greenhouse") || normalized.includes("lever");
+}
+
 function isValidUrl(url: string): boolean {
   try {
     const u = new URL(url);
     return u.protocol === "https:" || u.protocol === "http:";
   } catch {
     return false;
+  }
+}
+
+async function isReachableJobUrl(url: string): Promise<boolean> {
+  if (!isValidUrl(url)) return false;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
+
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": "Mozilla/5.0 JobPilotBot/1.0" },
+    }).catch(async () => {
+      return await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        signal: controller.signal,
+        headers: { "user-agent": "Mozilla/5.0 JobPilotBot/1.0", range: "bytes=0-1024" },
+      });
+    });
+
+    if (!response.ok) return false;
+
+    const finalUrl = response.url?.toLowerCase() || url.toLowerCase();
+    if (finalUrl.includes("/login") || finalUrl.includes("signin") || finalUrl.includes("authwall")) return false;
+
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
