@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Loader2, Sparkles, CheckCircle2, FileText,
   Target, Zap, Tag, Lightbulb, ArrowUpRight, Briefcase, Upload,
-  BarChart3, AlertTriangle, Key,
+  BarChart3, AlertTriangle, Key, Pencil,
 } from "lucide-react";
 
 const StandaloneOptimizer = () => {
@@ -143,24 +143,36 @@ const StandaloneOptimizer = () => {
           </motion.div>
         ) : !result ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            {/* Resume info */}
+            {/* Resume info + Edit/Change */}
             <div className="glass rounded-xl p-5">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Using: {resume.file_name}</p>
-                  <p className="text-xs text-muted-foreground">Your primary resume will be optimized</p>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">Using: {resume.file_name}</p>
+                    <p className="text-xs text-muted-foreground">Your primary resume will be tailored to this job</p>
+                  </div>
                 </div>
+                <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }}>
+                  <Button
+                    variant="hero-outline"
+                    size="sm"
+                    onClick={() => navigate("/upload")}
+                    className="gap-1.5"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Change Resume
+                  </Button>
+                </motion.div>
               </div>
             </div>
 
-            {/* Job description input */}
+            {/* Job description input — REQUIRED */}
             <div className="glass rounded-xl p-6">
-            <label className="text-sm font-medium mb-3 block">
+              <label className="text-sm font-medium mb-3 block">
                 Paste the Job Description <span className="text-destructive">*</span>
               </label>
               <Textarea
-                placeholder="Paste the full job description here... Include responsibilities, qualifications, and requirements for the best optimization."
+                placeholder="Paste the full job description here... Include responsibilities, qualifications, and requirements for the best tailoring & ATS score."
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 className="min-h-[200px] bg-surface-2 border-border/30 text-sm"
@@ -170,24 +182,26 @@ const StandaloneOptimizer = () => {
               </p>
             </div>
 
-            {/* Optimize button */}
-            <Button
-              variant="hero"
-              size="lg"
-              className="w-full"
-              onClick={handleOptimize}
-              disabled={loading || jobDescription.trim().length < 20}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Optimizing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" /> Optimize for ATS
-                </>
-              )}
-            </Button>
+            {/* Optimize button with tap animation */}
+            <motion.div whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.01 }}>
+              <Button
+                variant="hero"
+                size="lg"
+                className="w-full"
+                onClick={handleOptimize}
+                disabled={loading || jobDescription.trim().length < 20}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Tailoring your resume...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" /> Tailor Resume & Check ATS Score
+                  </>
+                )}
+              </Button>
+            </motion.div>
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
