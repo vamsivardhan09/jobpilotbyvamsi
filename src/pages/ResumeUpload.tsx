@@ -103,6 +103,16 @@ const ResumeUpload = () => {
       const result = analysisData.data;
       setAnalysisResult(result);
 
+      const { error: unsetPrimaryError } = await supabase
+        .from("resumes")
+        .update({ is_primary: false })
+        .eq("user_id", user.id)
+        .eq("is_primary", true);
+
+      if (unsetPrimaryError) {
+        throw new Error(`Could not update previous resume: ${unsetPrimaryError.message}`);
+      }
+
       // 4. Save resume record
       const { data: resumeRecord, error: dbError } = await supabase
         .from("resumes")
