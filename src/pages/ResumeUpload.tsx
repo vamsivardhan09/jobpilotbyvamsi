@@ -131,6 +131,8 @@ const ResumeUpload = () => {
 
       // 5. Save skills
       if (result.skills?.length && resumeRecord) {
+        await supabase.from("skills").delete().eq("user_id", user.id);
+
         const skillRows = result.skills.map((s: any) => ({
           user_id: user.id,
           resume_id: resumeRecord.id,
