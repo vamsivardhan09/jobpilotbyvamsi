@@ -342,9 +342,6 @@ serve(async (req) => {
     const SERPER_API_KEY = Deno.env.get("SERPER_API_KEY");
     if (!SERPER_API_KEY) throw new Error("SERPER_API_KEY is not configured");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const skillNames = skills.map((s: any) => typeof s === "string" ? s : s.name);
     const queries = buildSearchQueries(skillNames, preferredRoles || [], location || "India", experienceLevel || "", workType || "");
 
@@ -383,121 +380,65 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const validatedResults = await Promise.all(uniqueResults.map(async (result) => {
+      const source = result.source || extractSource(result.link);
+      if (!isAllowedSource(source)) return null;
+
+      const reachable = await isReachableJobUrl(result.link);
+      return {
+        ...result,
+        source,
+        reachable,
+      };
+    }));
+
     // Parse job info
-    const jobCandidates = uniqueResults.map(r => {
+    const jobCandidates = validatedResults.filter(Boolean).map((r: any) => {
       const info = parseJobInfo(r);
+      const content = `${r.title || ""} ${r.snippet || ""}`.trim();
+      const required_skills = extractRequiredSkills(content, skillNames);
+      const matched_skills = required_skills.filter((skill) =>
+        skillNames.some((candidateSkill) => normalizeTerm(candidateSkill) === normalizeTerm(skill))
+      );
+      const missing_skills = required_skills.filter((skill) => !matched_skills.includes(skill));
+      const skillOverlap = required_skills.length > 0 ? matched_skills.length / required_skills.length : 0;
+      const matchScore = Math.min(
+        100,
+        Math.max(
+          15,
+          Math.round(skillOverlap * 70 + roleBoost(info.title, preferredRoles || []) + experienceBoost(content, experienceLevel || ""))
+        )
+      );
+
       return {
         ...info,
-        apply_url: r.link,
+        apply_url: r.reachable ? r.link : null,
+        source_url: r.link,
         source: r.source,
         snippet: r.snippet,
         location_priority: locationPriority(info.location, r.link),
+        required_skills,
+        matched_skills,
+        missing_skills,
+        match_score: matchScore,
       };
     });
-
-    // Use AI to score
-    const jobSummaries = jobCandidates.slice(0, 20).map((job, i) => ({
-      index: i,
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      snippet: (job.snippet || "").substring(0, 300),
-      source: job.source,
-    }));
-
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages: [
-          {
-            role: "system",
-            content: `You are a job matching engine. Given candidate skills and job listings, analyze each and determine skill match. For each job, extract the likely required skills from title/snippet, determine which candidate skills match, identify missing skills, and assign a match score (0-100). Rules:
-- Only assign 80+ for strong direct skill overlap (3+ matching technical skills)
-- Assign 60-79 for partial matches (1-2 key skills match)
-- Assign 30-59 for weak/tangential matches
-- Assign below 30 for irrelevant jobs
-- Mark aggregator listing pages (e.g. "103580 Jobs on Naukri") as is_relevant: false`,
-          },
-          {
-            role: "user",
-            content: `Candidate skills: ${skillNames.join(", ")}
-Experience level: ${experienceLevel || "not specified"}
-
-Score these job listings:
-${JSON.stringify(jobSummaries)}`,
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_scores",
-              description: "Return match scores for each job",
-              parameters: {
-                type: "object",
-                properties: {
-                  scores: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        index: { type: "number" },
-                        match_score: { type: "number" },
-                        matched_skills: { type: "array", items: { type: "string" } },
-                        missing_skills: { type: "array", items: { type: "string" } },
-                        required_skills: { type: "array", items: { type: "string" } },
-                        is_relevant: { type: "boolean" },
-                      },
-                      required: ["index", "match_score", "matched_skills", "missing_skills", "required_skills", "is_relevant"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["scores"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "return_scores" } },
-      }),
-    });
-
-    let scoreMap: Record<number, any> = {};
-    if (aiResponse.ok) {
-      const aiData = await aiResponse.json();
-      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-      if (toolCall?.function?.arguments) {
-        const parsed = JSON.parse(toolCall.function.arguments);
-        for (const s of (parsed.scores || [])) {
-          scoreMap[s.index] = s;
-        }
-      }
-    } else {
-      console.warn("AI scoring failed, using basic matching");
-    }
-
-    const jobs = jobCandidates.slice(0, 20).map((job, i) => {
-      const score = scoreMap[i];
+    const jobs = jobCandidates.slice(0, 20).map((job) => {
       return {
         title: job.title,
         company: job.company,
         location: job.location || "",
         description: job.snippet || "",
         salary_range: null as string | null,
-        match_score: score?.match_score ?? 50,
-        required_skills: score?.required_skills ?? [],
-        matched_skills: score?.matched_skills ?? [],
-        missing_skills: score?.missing_skills ?? [],
+        match_score: job.match_score,
+        required_skills: job.required_skills,
+        matched_skills: job.matched_skills,
+        missing_skills: job.missing_skills,
         apply_url: job.apply_url,
+        source_url: job.source_url,
         source: job.source,
         location_priority: job.location_priority,
-        is_relevant: score?.is_relevant ?? true,
+        is_relevant: job.match_score >= 20,
       };
     })
     .filter(job => job.is_relevant !== false)
