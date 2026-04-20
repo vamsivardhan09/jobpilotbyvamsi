@@ -1,7 +1,7 @@
 import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import JSZip from "jszip";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
@@ -16,12 +16,14 @@ const ACCEPTED_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
+const ACCEPTED_EXTENSIONS = [".pdf", ".docx"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 const ResumeUpload = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -30,7 +32,11 @@ const ResumeUpload = () => {
   const [step, setStep] = useState<"upload" | "analyzing" | "results">("upload");
 
   const validateFile = (f: File): string | null => {
-    if (!ACCEPTED_TYPES.includes(f.type)) return "Only PDF and DOCX files are supported.";
+    const lowerName = f.name.toLowerCase();
+    const hasValidExtension = ACCEPTED_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+    const hasValidMime = !f.type || ACCEPTED_TYPES.includes(f.type);
+
+    if (!hasValidExtension && !hasValidMime) return "Only PDF and DOCX files are supported.";
     if (f.size > MAX_SIZE) return "File must be under 10MB.";
     return null;
   };
@@ -44,6 +50,9 @@ const ResumeUpload = () => {
     setFile(f);
     setAnalysisResult(null);
     setStep("upload");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -94,6 +103,16 @@ const ResumeUpload = () => {
       const result = analysisData.data;
       setAnalysisResult(result);
 
+      const { error: unsetPrimaryError } = await supabase
+        .from("resumes")
+        .update({ is_primary: false })
+        .eq("user_id", user.id)
+        .eq("is_primary", true);
+
+      if (unsetPrimaryError) {
+        throw new Error(`Could not update previous resume: ${unsetPrimaryError.message}`);
+      }
+
       // 4. Save resume record
       const { data: resumeRecord, error: dbError } = await supabase
         .from("resumes")
@@ -112,6 +131,8 @@ const ResumeUpload = () => {
 
       // 5. Save skills
       if (result.skills?.length && resumeRecord) {
+        await supabase.from("skills").delete().eq("user_id", user.id);
+
         const skillRows = result.skills.map((s: any) => ({
           user_id: user.id,
           resume_id: resumeRecord.id,
@@ -173,9 +194,10 @@ const ResumeUpload = () => {
                   ? "border-primary/30 bg-primary/5"
                   : "border-border/50 hover:border-primary/30 hover:bg-surface-2"
               }`}
-              onClick={() => document.getElementById("file-input")?.click()}
+              onClick={() => fileInputRef.current?.click()}
             >
               <input
+                ref={fileInputRef}
                 id="file-input"
                 type="file"
                 accept=".pdf,.docx"
@@ -195,7 +217,13 @@ const ResumeUpload = () => {
                     </p>
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFile(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
                     className="text-xs text-destructive hover:underline flex items-center gap-1 mt-1"
                   >
                     <X className="w-3 h-3" /> Remove
