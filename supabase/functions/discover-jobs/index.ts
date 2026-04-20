@@ -274,6 +274,56 @@ function locationPriority(location: string, url: string): number {
   return 1;
 }
 
+function normalizeTerm(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9+#.\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function extractRequiredSkills(text: string, candidateSkills: string[]): string[] {
+  const normalizedText = normalizeTerm(text);
+  const normalizedCandidates = candidateSkills
+    .map((skill) => skill.trim())
+    .filter(Boolean);
+
+  const commonKeywords = [
+    "react", "typescript", "javascript", "node.js", "node", "python", "java", "sql", "postgresql", "mongodb",
+    "aws", "azure", "docker", "kubernetes", "rest api", "graphql", "html", "css", "tailwind", "git",
+    "next.js", "express", "redis", "firebase", "figma", "product design", "data analysis", "machine learning",
+  ];
+
+  const matchedCandidateSkills = normalizedCandidates.filter((skill) => {
+    const pattern = new RegExp(`(^|\\b)${escapeRegex(normalizeTerm(skill))}(\\b|$)`, "i");
+    return pattern.test(normalizedText);
+  });
+
+  const matchedKeywords = commonKeywords.filter((skill) => {
+    const pattern = new RegExp(`(^|\\b)${escapeRegex(normalizeTerm(skill))}(\\b|$)`, "i");
+    return pattern.test(normalizedText);
+  });
+
+  return Array.from(new Set([...matchedCandidateSkills, ...matchedKeywords])).slice(0, 12);
+}
+
+function experienceBoost(text: string, experienceLevel: string): number {
+  const normalizedText = normalizeTerm(text);
+  const level = (experienceLevel || "").toLowerCase();
+  if (!level) return 0;
+  if (level === "fresher" && /(fresher|entry level|0 ?- ?1|graduate|junior)/.test(normalizedText)) return 10;
+  if (level === "junior" && /(junior|1 ?- ?3|associate)/.test(normalizedText)) return 10;
+  if (level === "mid" && /(mid|3 ?- ?5|intermediate)/.test(normalizedText)) return 10;
+  if ((level === "senior" || level === "lead") && /(senior|staff|lead|principal|5\+|8\+)/.test(normalizedText)) return 10;
+  return 0;
+}
+
+function roleBoost(title: string, preferredRoles: string[]): number {
+  const normalizedTitle = normalizeTerm(title);
+  const match = (preferredRoles || []).some((role) => normalizeTerm(role).split(" ").every((part) => normalizedTitle.includes(part)));
+  return match ? 15 : 0;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
