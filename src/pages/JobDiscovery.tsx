@@ -268,10 +268,11 @@ const JobDiscovery = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      const recentCutoff = recentJobsCutoffIso();
       const [skillsRes, profileRes, matchesRes, prefsRes] = await Promise.all([
         supabase.from("skills").select("*").eq("user_id", user.id),
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase.from("job_matches").select("*").eq("user_id", user.id).order("match_score", { ascending: false }),
+        supabase.from("job_matches").select("*").eq("user_id", user.id).gte("created_at", recentCutoff).order("match_score", { ascending: false }),
         supabase.from("user_preferences").select("*").eq("user_id", user.id).maybeSingle(),
       ]);
       setSkills(skillsRes.data ?? []);
@@ -332,10 +333,11 @@ const JobDiscovery = () => {
     setProgressText("Searching job boards across India and globally...");
 
     try {
-      // Delete old low-quality matches (score < 20) before new discovery
-      await supabase.from("job_matches").delete().eq("user_id", user.id).lt("match_score", 20);
+      const recentCutoff = recentJobsCutoffIso();
 
-      setTimeout(() => setProgressText("Analyzing job listings with AI..."), 3000);
+      await supabase.from("job_matches").delete().eq("user_id", user.id).lt("created_at", recentCutoff);
+
+      setTimeout(() => setProgressText("Checking fresh job posts from trusted sources..."), 3000);
       setTimeout(() => setProgressText("Scoring matches against your skills..."), 6000);
 
       const { data, error } = await supabase.functions.invoke("discover-jobs", {
@@ -353,7 +355,7 @@ const JobDiscovery = () => {
       if (data.error) throw new Error(data.error);
       if (!data.success) throw new Error("Discovery returned unsuccessful response");
 
-      const discovered: JobMatch[] = data.data;
+      const discovered: JobMatch[] = Array.isArray(data.data) ? data.data : [];
       setTotalResults(data.total || discovered.length);
 
       if (data.suggestions?.length) {
@@ -366,11 +368,8 @@ const JobDiscovery = () => {
         return;
       }
 
-      setJobs(discovered);
-
-      // Save to database — deduplicate by apply_url
-      const existingUrls = new Set(savedJobs.map((j) => j.apply_url).filter(Boolean));
-      const newJobs = discovered.filter((job) => !existingUrls.has(job.apply_url));
+      const existingJobKeys = new Set(savedJobs.map((job) => toJobKey(job)));
+      const newJobs = discovered.filter((job) => !existingJobKeys.has(toJobKey(job)));
 
       if (newJobs.length > 0) {
         const rows = newJobs.map((job) => ({
@@ -385,18 +384,21 @@ const JobDiscovery = () => {
           matched_skills: job.matched_skills || [],
           missing_skills: job.missing_skills || [],
           apply_url: job.apply_url || null,
+          source_url: job.source_url || job.apply_url || null,
           status: "new",
         }));
 
         const { data: insertedJobs, error: dbError } = await supabase.from("job_matches").insert(rows).select();
         if (dbError) console.error("DB save error:", dbError);
         if (insertedJobs) {
-          setSavedJobs((prev) => [...insertedJobs, ...prev]);
-          setJobs(insertedJobs);
+          const mergedInsertedJobs = mergePersistedJobMetadata(insertedJobs as JobMatch[], newJobs);
+          setSavedJobs((prev) => [...mergedInsertedJobs, ...prev]);
+          setJobs([...mergePersistedJobMetadata(savedJobs, discovered), ...mergedInsertedJobs].sort((a, b) => b.match_score - a.match_score));
+        } else {
+          setJobs(discovered);
         }
       } else {
-        // All jobs already saved, use discovered data
-        setJobs(discovered);
+        setJobs(mergePersistedJobMetadata(savedJobs, discovered));
       }
 
       toast({ title: "Jobs discovered!", description: `Found ${discovered.length} matching positions.` });
