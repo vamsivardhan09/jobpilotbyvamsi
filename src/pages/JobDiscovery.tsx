@@ -25,8 +25,31 @@ type JobMatch = {
   matched_skills: string[];
   missing_skills: string[];
   apply_url?: string;
+  source_url?: string;
+  created_at?: string;
   status?: string;
   source?: string;
+};
+
+const RECENT_JOB_WINDOW_HOURS = 48;
+const recentJobsCutoffIso = () => new Date(Date.now() - RECENT_JOB_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+const toJobKey = (job: Pick<JobMatch, "title" | "company" | "location">) =>
+  [job.title, job.company, job.location].map((value) => (value || "").trim().toLowerCase()).join("|");
+const getOfficialCareerSearchUrl = (job: Pick<JobMatch, "title" | "company">) =>
+  `https://www.google.com/search?q=${encodeURIComponent(`${job.company} careers ${job.title}`.trim())}`;
+const mergePersistedJobMetadata = (persistedJobs: JobMatch[], discoveredJobs: JobMatch[]) => {
+  const discoveredMap = new Map(discoveredJobs.map((job) => [toJobKey(job), job]));
+  return persistedJobs.map((job) => {
+    const discovered = discoveredMap.get(toJobKey(job));
+    return discovered
+      ? {
+          ...discovered,
+          ...job,
+          source: job.source ?? discovered.source,
+          source_url: job.source_url ?? discovered.source_url,
+        }
+      : job;
+  });
 };
 
 const isLinkedInUrl = (url?: string) => url?.toLowerCase().includes("linkedin.com");
@@ -71,7 +94,7 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
   const [showGuide, setShowGuide] = useState(false);
   const showFallback = needsApplyFallback(job.apply_url, job.source);
   const sLabel = sourceLabel(job.apply_url, job.source);
-  const sUrl = sourceSearchUrl(job.apply_url);
+  const sUrl = getOfficialCareerSearchUrl(job);
 
   const searchQuery = `${job.title} ${job.company}`.trim();
 
@@ -81,8 +104,6 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  if (!job.apply_url) return null;
 
   if (!showFallback) {
     return (
@@ -112,8 +133,12 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
           <div className="space-y-1.5">
             <div className="flex items-start gap-2">
               <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">1</span>
+              <p className="text-[11px] text-foreground">Go to the <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">official career page</a></p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-foreground">Copy this search text:</p>
+                <p className="text-[11px] text-foreground">Search this text:</p>
                 <button
                   onClick={(e) => handleCopy(searchQuery, e)}
                   className="mt-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-secondary border border-border/50 text-xs font-mono text-foreground hover:bg-secondary/80 transition-colors w-full text-left"
@@ -124,22 +149,24 @@ const ApplyButton = ({ job, compact = false }: { job: JobMatch; compact?: boolea
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">2</span>
-              <p className="text-[11px] text-foreground">Go to <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">{sLabel}</a>, paste in search and filter to <strong>last 24 hours</strong></p>
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
+              <p className="text-[11px] text-foreground">Filter to the <strong>latest jobs</strong></p>
             </div>
             <div className="flex items-start gap-2">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">3</span>
-              <p className="text-[11px] text-foreground">Find the matching job and click <strong>Apply</strong></p>
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">4</span>
+              <p className="text-[11px] text-foreground">Apply directly from the official listing</p>
             </div>
           </div>
-          <a
-            href={job.apply_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ExternalLink className="w-3 h-3" /> Try direct link anyway
-          </a>
+          {job.apply_url && (
+            <a
+              href={job.apply_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" /> Try direct link anyway
+            </a>
+          )}
         </div>
       )}
     </div>
@@ -150,7 +177,7 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
   const [copied, setCopied] = useState(false);
   const showFallback = needsApplyFallback(job.apply_url, job.source);
   const sLabel = sourceLabel(job.apply_url, job.source);
-  const sUrl = sourceSearchUrl(job.apply_url);
+  const sUrl = getOfficialCareerSearchUrl(job);
   const searchQuery = `${job.title} ${job.company}`.trim();
 
   const handleCopy = async (text: string) => {
@@ -161,18 +188,22 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
 
   return (
     <div className="space-y-3">
-      {showFallback && job.apply_url && (
+      {showFallback && (
         <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-warning" />
-            <p className="text-xs font-medium text-foreground">{sLabel} links may expire or require login</p>
+            <p className="text-xs font-medium text-foreground">Use the official company application flow</p>
           </div>
-          <p className="text-xs text-muted-foreground">Follow these steps to apply manually:</p>
+          <p className="text-xs text-muted-foreground">If the direct link is unavailable or unstable, follow these steps:</p>
           <div className="space-y-2.5">
             <div className="flex items-start gap-2.5">
               <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">1</span>
+              <p className="text-xs text-foreground">Open the <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">official career page</a></p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">2</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-foreground mb-1.5">Copy this search text:</p>
+                <p className="text-xs text-foreground mb-1.5">Search this text:</p>
                 <button
                   onClick={() => handleCopy(searchQuery)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary border border-border/50 text-sm font-mono text-foreground hover:bg-secondary/80 transition-colors w-full text-left"
@@ -183,12 +214,12 @@ const ApplySection = ({ job }: { job: JobMatch }) => {
               </div>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">2</span>
-              <p className="text-xs text-foreground">Open <a href={sUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">{sLabel}</a>, paste in search, and filter <strong>last 24 hours</strong></p>
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">3</span>
+              <p className="text-xs text-foreground">Filter for the <strong>latest jobs</strong></p>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">3</span>
-              <p className="text-xs text-foreground">Find the matching listing and click <strong>Apply</strong></p>
+              <span className="shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center mt-0.5">4</span>
+              <p className="text-xs text-foreground">Apply directly from the official listing</p>
             </div>
           </div>
         </div>
