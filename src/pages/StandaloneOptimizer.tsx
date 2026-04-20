@@ -10,11 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Loader2, Sparkles, CheckCircle2, FileText,
   Target, Zap, Tag, Lightbulb, ArrowUpRight, Briefcase, Upload,
-  BarChart3, AlertTriangle, Key,
+  BarChart3, AlertTriangle, Key, Pencil,
 } from "lucide-react";
 
 const StandaloneOptimizer = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -27,22 +27,33 @@ const StandaloneOptimizer = () => {
   const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [optimizedScore, setOptimizedScore] = useState<number | null>(null);
 
-  // Load user's latest resume on mount
+  // Load user's latest resume — wait for auth to finish first (fixes new-device race)
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      setResumeLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    setResumeLoaded(false);
     supabase
       .from("resumes")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setResume(data[0]);
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("Resume fetch error:", error);
+          toast({ title: "Couldn't load your resume", description: "Please refresh and try again.", variant: "destructive" });
         }
+        if (data && data.length > 0) setResume(data[0]);
+        else setResume(null);
         setResumeLoaded(true);
       });
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [user, authLoading, toast]);
 
   const handleOptimize = async () => {
     if (!resume?.raw_text || !user) return;
@@ -120,7 +131,7 @@ const StandaloneOptimizer = () => {
           </p>
         </motion.div>
 
-        {!resumeLoaded ? (
+        {(authLoading || !resumeLoaded) ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
@@ -132,24 +143,36 @@ const StandaloneOptimizer = () => {
           </motion.div>
         ) : !result ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            {/* Resume info */}
+            {/* Resume info + Edit/Change */}
             <div className="glass rounded-xl p-5">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Using: {resume.file_name}</p>
-                  <p className="text-xs text-muted-foreground">Your primary resume will be optimized</p>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">Using: {resume.file_name}</p>
+                    <p className="text-xs text-muted-foreground">Your primary resume will be tailored to this job</p>
+                  </div>
                 </div>
+                <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }}>
+                  <Button
+                    variant="hero-outline"
+                    size="sm"
+                    onClick={() => navigate("/upload")}
+                    className="gap-1.5"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Change Resume
+                  </Button>
+                </motion.div>
               </div>
             </div>
 
-            {/* Job description input */}
+            {/* Job description input — REQUIRED */}
             <div className="glass rounded-xl p-6">
-            <label className="text-sm font-medium mb-3 block">
+              <label className="text-sm font-medium mb-3 block">
                 Paste the Job Description <span className="text-destructive">*</span>
               </label>
               <Textarea
-                placeholder="Paste the full job description here... Include responsibilities, qualifications, and requirements for the best optimization."
+                placeholder="Paste the full job description here... Include responsibilities, qualifications, and requirements for the best tailoring & ATS score."
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 className="min-h-[200px] bg-surface-2 border-border/30 text-sm"
@@ -159,24 +182,26 @@ const StandaloneOptimizer = () => {
               </p>
             </div>
 
-            {/* Optimize button */}
-            <Button
-              variant="hero"
-              size="lg"
-              className="w-full"
-              onClick={handleOptimize}
-              disabled={loading || jobDescription.trim().length < 20}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Optimizing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" /> Optimize for ATS
-                </>
-              )}
-            </Button>
+            {/* Optimize button with tap animation */}
+            <motion.div whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.01 }}>
+              <Button
+                variant="hero"
+                size="lg"
+                className="w-full"
+                onClick={handleOptimize}
+                disabled={loading || jobDescription.trim().length < 20}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Tailoring your resume...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" /> Tailor Resume & Check ATS Score
+                  </>
+                )}
+              </Button>
+            </motion.div>
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

@@ -32,8 +32,8 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 font-bold text-lg tracking-tight">
-          <img src={logoImg} alt="JobPilot" className="w-8 h-8 object-contain" />
-          <span>JobPilot</span>
+          <img src={logoImg} alt="AnyJobs" className="w-8 h-8 object-contain" />
+          <span>AnyJobs</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

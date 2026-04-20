@@ -7,8 +7,8 @@ export const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
-            <img src={logoImg} alt="JobPilot" className="w-7 h-7 object-contain" />
-            JobPilot
+            <img src={logoImg} alt="AnyJobs" className="w-7 h-7 object-contain" />
+            AnyJobs
           </Link>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
@@ -16,7 +16,7 @@ export const Footer = () => {
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
           </div>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} JobPilot. All rights reserved.
+            © {new Date().getFullYear()} AnyJobs. All rights reserved.
           </p>
         </div>
       </div>
