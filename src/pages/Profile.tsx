@@ -1,9 +1,8 @@
-import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Briefcase, ArrowLeft, User, MapPin, Code2, Target,
-  Save, Loader2, Plus, X, GraduationCap,
+  User, MapPin, Code2, Target,
+  Save, Loader2, Plus, X, GraduationCap, FileText, Upload, Pencil,
 } from "lucide-react";
 
 const EXPERIENCE_LEVELS = [
@@ -32,6 +31,7 @@ const EXPERIENCE_LEVELS = [
 
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -48,13 +48,20 @@ const Profile = () => {
 
   // Skills from DB
   const [skills, setSkills] = useState<{ id: string; name: string; category: string | null; proficiency: string | null }[]>([]);
+  const [resume, setResume] = useState<{ id: string; file_name: string; created_at: string; is_primary: boolean | null } | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [profileRes, skillsRes] = await Promise.all([
+      const [profileRes, skillsRes, resumeRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("skills").select("id, name, category, proficiency").eq("user_id", user.id),
+        supabase
+          .from("resumes")
+          .select("id, file_name, created_at, is_primary")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1),
       ]);
 
       if (profileRes.data) {
@@ -65,6 +72,7 @@ const Profile = () => {
         setPreferredLocations(profileRes.data.preferred_locations || []);
       }
       setSkills(skillsRes.data ?? []);
+      setResume(resumeRes.data?.[0] ?? null);
       setLoading(false);
     };
     load();
@@ -156,6 +164,54 @@ const Profile = () => {
               <Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Full Stack Developer" className="mt-1" />
             </div>
           </div>
+        </motion.section>
+
+        {/* Resume */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.075 }}
+          className="glass rounded-xl p-6 mb-6"
+        >
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" /> My Resume
+          </h2>
+          {resume ? (
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{resume.file_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Uploaded {new Date(resume.created_at).toLocaleDateString()}
+                    {resume.is_primary && " • Primary"}
+                  </p>
+                </div>
+              </div>
+              <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/upload")}
+                  className="gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Replace
+                </Button>
+              </motion.div>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Upload className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground mb-3">No resume uploaded yet.</p>
+              <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }} className="inline-block">
+                <Button variant="hero" size="sm" onClick={() => navigate("/upload")} className="gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload Resume
+                </Button>
+              </motion.div>
+            </div>
+          )}
         </motion.section>
 
         {/* Experience Level */}
