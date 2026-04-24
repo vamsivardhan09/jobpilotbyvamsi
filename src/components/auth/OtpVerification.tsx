@@ -10,9 +10,11 @@ interface OtpVerificationProps {
   onResend: () => Promise<void>;
   onBack: () => void;
   loading: boolean;
+  /** When provided, the code is displayed on screen (demo/no-email mode). */
+  displayCode?: string;
 }
 
-export const OtpVerification = ({ email, onVerify, onResend, onBack, loading }: OtpVerificationProps) => {
+export const OtpVerification = ({ email, onVerify, onResend, onBack, loading, displayCode }: OtpVerificationProps) => {
   const [code, setCode] = useState("");
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(30);
