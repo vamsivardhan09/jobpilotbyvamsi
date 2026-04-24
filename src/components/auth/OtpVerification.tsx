@@ -51,12 +51,30 @@ export const OtpVerification = ({ email, onVerify, onResend, onBack, loading, di
         <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3">
           <Mail className="w-5 h-5 text-primary" />
         </div>
-        <h2 className="text-lg font-semibold mb-1">Check your email</h2>
+        <h2 className="text-lg font-semibold mb-1">Enter verification code</h2>
         <p className="text-xs text-muted-foreground">
-          We sent a 6-digit code to<br />
+          Verifying<br />
           <span className="text-foreground font-medium">{email}</span>
         </p>
       </div>
+
+      {displayCode && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center"
+        >
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+            Your verification code
+          </p>
+          <p className="text-2xl font-mono font-bold text-primary tracking-[0.4em]">
+            {displayCode}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Demo mode — enter this code below
+          </p>
+        </motion.div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex justify-center">
