@@ -14,6 +14,8 @@ import { OtpVerification } from "@/components/auth/OtpVerification";
 const DEMO_EMAIL = "demo@anyjobs.app";
 const DEMO_PASSWORD = "DemoUser!2025";
 
+const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,15 +24,32 @@ const Register = () => {
   const [demoLoading, setDemoLoading] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Step 1: create account, sign out, send OTP for verification
+  // Step 1: validate inputs, show OTP step (account is created AFTER OTP verify)
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !name.trim() || !password.trim()) return;
     setLoading(true);
 
+    const code = generateCode();
+    setGeneratedCode(code);
+    setOtpStep(true);
+    setLoading(false);
+    toast({ title: "Code generated", description: "Enter the 6-digit code shown on screen." });
+  };
+
+  const handleVerifyOtp = async (code: string) => {
+    setOtpLoading(true);
+    if (code !== generatedCode) {
+      setOtpLoading(false);
+      toast({ title: "Invalid code", description: "The code you entered is incorrect.", variant: "destructive" });
+      return;
+    }
+
+    // Code matched — create the account now
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -39,61 +58,21 @@ const Register = () => {
         data: { full_name: name.trim() },
       },
     });
+    setOtpLoading(false);
 
     if (error) {
-      setLoading(false);
       toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       return;
     }
 
-    // If signUp returned a session (auto-confirm enabled), sign out so OTP gates entry
-    await supabase.auth.signOut();
-
-    // Send OTP
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: false },
-    });
-
-    setLoading(false);
-
-    if (otpError) {
-      toast({ title: "Couldn't send code", description: otpError.message, variant: "destructive" });
-      return;
-    }
-
-    setOtpStep(true);
-    toast({ title: "Code sent", description: "Check your email for the 6-digit code." });
-  };
-
-  const handleVerifyOtp = async (code: string) => {
-    setOtpLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: code,
-      type: "email",
-    });
-    setOtpLoading(false);
-
-    if (error) {
-      toast({ title: "Invalid code", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    toast({ title: "Welcome!", description: "Account verified successfully." });
+    toast({ title: "Welcome!", description: "Account created successfully." });
     navigate("/dashboard");
   };
 
   const handleResendOtp = async () => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: false },
-    });
-    if (error) {
-      toast({ title: "Couldn't resend", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "New code sent" });
-    }
+    const code = generateCode();
+    setGeneratedCode(code);
+    toast({ title: "New code generated" });
   };
 
   const handleDemoLogin = async () => {
