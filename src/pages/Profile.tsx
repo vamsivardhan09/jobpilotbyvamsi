@@ -166,6 +166,54 @@ const Profile = () => {
           </div>
         </motion.section>
 
+        {/* Resume */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.075 }}
+          className="glass rounded-xl p-6 mb-6"
+        >
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" /> My Resume
+          </h2>
+          {resume ? (
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{resume.file_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Uploaded {new Date(resume.created_at).toLocaleDateString()}
+                    {resume.is_primary && " • Primary"}
+                  </p>
+                </div>
+              </div>
+              <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/upload")}
+                  className="gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Replace
+                </Button>
+              </motion.div>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Upload className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground mb-3">No resume uploaded yet.</p>
+              <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.03 }} className="inline-block">
+                <Button variant="hero" size="sm" onClick={() => navigate("/upload")} className="gap-1.5">
+                  <Upload className="w-3.5 h-3.5" /> Upload Resume
+                </Button>
+              </motion.div>
+            </div>
+          )}
+        </motion.section>
+
         {/* Experience Level */}
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
