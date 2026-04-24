@@ -8,12 +8,17 @@ import logoImg from "@/assets/jobpilot-logo.png";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Sparkles } from "lucide-react";
+
+const DEMO_EMAIL = "demo@anyjobs.app";
+const DEMO_PASSWORD = "DemoUser!2025";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -26,6 +31,7 @@ const Register = () => {
       email: email.trim(),
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
         data: { full_name: name.trim() },
       },
     });
@@ -36,6 +42,46 @@ const Register = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Welcome!", description: "Account created successfully." });
+      navigate("/dashboard");
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    let { error } = await supabase.auth.signInWithPassword({
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
+    });
+
+    if (error) {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: DEMO_EMAIL,
+        password: DEMO_PASSWORD,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { full_name: "Demo User" },
+        },
+      });
+
+      if (signUpError && !signUpError.message.toLowerCase().includes("already")) {
+        setDemoLoading(false);
+        toast({ title: "Demo unavailable", description: signUpError.message, variant: "destructive" });
+        return;
+      }
+
+      const retry = await supabase.auth.signInWithPassword({
+        email: DEMO_EMAIL,
+        password: DEMO_PASSWORD,
+      });
+      error = retry.error;
+    }
+
+    setDemoLoading(false);
+
+    if (error) {
+      toast({ title: "Demo unavailable", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Demo mode", description: "You're exploring with the demo account." });
       navigate("/dashboard");
     }
   };
@@ -90,10 +136,33 @@ const Register = () => {
                   required
                 />
               </div>
-              <Button variant="hero" className="w-full" disabled={loading} type="submit">
+              <Button variant="hero" className="w-full" disabled={loading || demoLoading} type="submit">
                 {loading ? "Creating..." : "Create Account"}
               </Button>
             </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/40" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card/40 px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleDemoLogin}
+              disabled={loading || demoLoading}
+            >
+              <Sparkles className="w-4 h-4" />
+              {demoLoading ? "Loading demo..." : "Try Demo Account"}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Skip signup — explore AnyJobs instantly
+            </p>
           </div>
 
           <p className="text-sm text-center text-muted-foreground mt-6">
