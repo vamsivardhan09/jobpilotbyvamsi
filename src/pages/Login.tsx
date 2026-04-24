@@ -147,6 +147,7 @@ const Login = () => {
                 onVerify={handleVerifyOtp}
                 onResend={handleResendOtp}
                 onBack={() => setOtpStep(false)}
+                displayCode={generatedCode}
               />
             ) : (
               <>
