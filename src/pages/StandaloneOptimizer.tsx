@@ -36,22 +36,38 @@ const StandaloneOptimizer = () => {
     }
     let cancelled = false;
     setResumeLoaded(false);
-    supabase
-      .from("resumes")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          console.error("Resume fetch error:", error);
-          toast({ title: "Couldn't load your resume", description: "Please refresh and try again.", variant: "destructive" });
+    (async () => {
+      // Try primary first, then fall back to most recent — handles legacy data
+      const primaryRes = await supabase
+        .from("resumes")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_primary", true)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      let chosen = primaryRes.data?.[0];
+
+      if (!chosen) {
+        const fallback = await supabase
+          .from("resumes")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (fallback.error) {
+          console.error("Resume fetch error:", fallback.error);
+          if (!cancelled) {
+            toast({ title: "Couldn't load your resume", description: "Please refresh and try again.", variant: "destructive" });
+          }
         }
-        if (data && data.length > 0) setResume(data[0]);
-        else setResume(null);
-        setResumeLoaded(true);
-      });
+        chosen = fallback.data?.[0];
+      }
+
+      if (cancelled) return;
+      setResume(chosen ?? null);
+      setResumeLoaded(true);
+    })();
     return () => { cancelled = true; };
   }, [user, authLoading, toast]);
 
