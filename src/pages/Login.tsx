@@ -122,10 +122,33 @@ const Login = () => {
                   required
                 />
               </div>
-              <Button variant="hero" className="w-full" disabled={loading} type="submit">
+              <Button variant="hero" className="w-full" disabled={loading || demoLoading} type="submit">
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/40" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card/40 px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleDemoLogin}
+              disabled={loading || demoLoading}
+            >
+              <Sparkles className="w-4 h-4" />
+              {demoLoading ? "Loading demo..." : "Try Demo Account"}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Explore AnyJobs instantly — no signup required
+            </p>
           </div>
 
           <p className="text-sm text-center text-muted-foreground mt-6">
