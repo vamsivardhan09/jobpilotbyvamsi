@@ -1,9 +1,8 @@
-import logoImg from "@/assets/jobpilot-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Briefcase, ArrowLeft, User, MapPin, Code2, Target,
-  Save, Loader2, Plus, X, GraduationCap,
+  User, MapPin, Code2, Target,
+  Save, Loader2, Plus, X, GraduationCap, FileText, Upload, Pencil,
 } from "lucide-react";
 
 const EXPERIENCE_LEVELS = [
@@ -32,6 +31,7 @@ const EXPERIENCE_LEVELS = [
 
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -48,13 +48,20 @@ const Profile = () => {
 
   // Skills from DB
   const [skills, setSkills] = useState<{ id: string; name: string; category: string | null; proficiency: string | null }[]>([]);
+  const [resume, setResume] = useState<{ id: string; file_name: string; created_at: string; is_primary: boolean | null } | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [profileRes, skillsRes] = await Promise.all([
+      const [profileRes, skillsRes, resumeRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("skills").select("id, name, category, proficiency").eq("user_id", user.id),
+        supabase
+          .from("resumes")
+          .select("id, file_name, created_at, is_primary")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1),
       ]);
 
       if (profileRes.data) {
@@ -65,6 +72,7 @@ const Profile = () => {
         setPreferredLocations(profileRes.data.preferred_locations || []);
       }
       setSkills(skillsRes.data ?? []);
+      setResume(resumeRes.data?.[0] ?? null);
       setLoading(false);
     };
     load();
